@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { PALS, ELEMENT_COLORS, computeChild, type Pal } from "@/lib/pals";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  fetchPalData,
+  findChild,
+  typeColor,
+  typeLabel,
+  type Pal,
+} from "@/lib/pals-api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -9,7 +16,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Calculadora de criação (breeding) de Palworld: escolha dois pais e descubra o filhote resultante, com combinações populares.",
+          "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações.",
       },
       { property: "og:title", content: "Pesquisa Reprodutiva de Palworld" },
       {
@@ -21,50 +28,51 @@ export const Route = createFileRoute("/")({
   component: BreedingPage,
 });
 
-function PalAvatar({ pal, size = 64 }: { pal: Pal; size?: number }) {
-  const initials = pal.name.slice(0, 2).toUpperCase();
-  const bg = ELEMENT_COLORS[pal.element];
-  return (
-    <div
-      className="flex items-center justify-center rounded-full font-bold text-white shadow-md ring-2 ring-white/60"
-      style={{
-        width: size,
-        height: size,
-        background: `radial-gradient(circle at 30% 25%, oklch(from ${bg} calc(l + 0.15) c h), ${bg})`,
-        fontSize: size * 0.32,
-      }}
-      aria-hidden
-    >
-      {initials}
-    </div>
-  );
-}
-
-function ElementBadge({ el }: { el: Pal["element"] }) {
+function TypeBadge({ t }: { t: string }) {
   return (
     <span
       className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
-      style={{ background: ELEMENT_COLORS[el] }}
+      style={{ background: typeColor(t) }}
     >
-      {el}
+      {typeLabel(t)}
     </span>
   );
 }
 
 function PalCard({ pal, label }: { pal: Pal; label?: string }) {
   return (
-    <div className="flex min-w-[110px] flex-col items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_4px_20px_rgba(80,120,200,0.12)]">
+    <div className="flex min-w-[120px] flex-col items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_4px_20px_rgba(80,120,200,0.10)]">
       {label && (
         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
       )}
-      <PalAvatar pal={pal} />
+      <div
+        className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-white shadow-inner"
+        style={{
+          background:
+            pal.types[0] &&
+            `radial-gradient(circle at 30% 25%, oklch(from ${typeColor(
+              pal.types[0].name,
+            )} calc(l + 0.15) c h), ${typeColor(pal.types[0].name)})`,
+        }}
+      >
+        <img
+          src={pal.imageWiki}
+          alt={pal.name}
+          loading="lazy"
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+      </div>
       <div className="text-center">
         <div className="text-sm font-semibold text-foreground">{pal.name}</div>
-        <div className="mt-0.5 flex justify-center gap-1">
-          <ElementBadge el={pal.element} />
-          {pal.element2 && <ElementBadge el={pal.element2} />}
+        <div className="mt-0.5 flex flex-wrap justify-center gap-1">
+          {pal.types.map((t) => (
+            <TypeBadge key={t.name} t={t.name} />
+          ))}
         </div>
       </div>
     </div>
@@ -75,11 +83,17 @@ function PalSelect({
   value,
   onChange,
   label,
+  pals,
 }: {
   value: string;
   onChange: (v: string) => void;
   label: string;
+  pals: Pal[];
 }) {
+  const sorted = useMemo(
+    () => [...pals].sort((a, b) => a.name.localeCompare(b.name)),
+    [pals],
+  );
   return (
     <label className="flex flex-1 flex-col gap-1">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -89,52 +103,77 @@ function PalSelect({
         className="h-11 rounded-lg border border-input bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       >
         <option value="">Não selecionado</option>
-        {[...PALS]
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.element})
-            </option>
-          ))}
+        {sorted.map((p) => (
+          <option key={p.key} value={p.key}>
+            {p.name}
+          </option>
+        ))}
       </select>
     </label>
   );
 }
 
+const PAGE_SIZE = 24;
+
 function BreedingPage() {
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["palworld-data"],
+    queryFn: fetchPalData,
+    staleTime: 1000 * 60 * 60, // 1h
+  });
+
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const [confirmed, setConfirmed] = useState<{ a: string; b: string } | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [query, setQuery] = useState("");
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredCombos = useMemo(() => {
+    if (!data) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return data.combinations;
+    return data.combinations.filter(
+      (c) =>
+        c.parent1.name.toLowerCase().includes(q) ||
+        c.parent2.name.toLowerCase().includes(q) ||
+        c.child.name.toLowerCase().includes(q),
+    );
+  }, [data, query]);
+
+  // Reset visible count when query changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query]);
+
+  // Infinite scroll
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filteredCombos.length));
+        }
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filteredCombos.length]);
 
   const result = useMemo(() => {
-    if (!confirmed) return null;
-    const pa = PALS.find((p) => p.id === confirmed.a);
-    const pb = PALS.find((p) => p.id === confirmed.b);
+    if (!data || !confirmed) return null;
+    const pa = data.byKey.get(confirmed.a);
+    const pb = data.byKey.get(confirmed.b);
     if (!pa || !pb) return null;
-    return { pa, pb, child: computeChild(pa, pb) };
-  }, [confirmed]);
-
-  const popular = useMemo(() => {
-    const picks: Array<[string, string]> = [
-      ["anubis", "anubis"],
-      ["jormuntide", "relaxaurus"],
-      ["blazamut", "suzaku"],
-      ["frostallion", "jetragon"],
-      ["shadowbeak", "necromus"],
-      ["grizzbolt", "orserk"],
-      ["mossanda", "grizzbolt"],
-      ["penking", "bushi"],
-      ["kitsun", "dazzi"],
-    ];
-    return picks
-      .map(([x, y]) => {
-        const pa = PALS.find((p) => p.id === x);
-        const pb = PALS.find((p) => p.id === y);
-        if (!pa || !pb) return null;
-        return { pa, pb, child: computeChild(pa, pb) };
-      })
-      .filter((v): v is { pa: Pal; pb: Pal; child: Pal } => v !== null);
-  }, []);
+    const child = findChild(data, confirmed.a, confirmed.b);
+    return { pa, pb, child };
+  }, [data, confirmed]);
 
   return (
     <main
@@ -164,6 +203,7 @@ function BreedingPage() {
                       ? "border-b-2 border-primary text-primary"
                       : "text-muted-foreground hover:text-foreground")
                   }
+                  style={active ? { color: "oklch(0.55 0.2 250)", borderColor: "oklch(0.55 0.2 250)" } : undefined}
                 >
                   {tab}
                 </button>
@@ -172,97 +212,144 @@ function BreedingPage() {
           </nav>
         </header>
 
-        <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <PalSelect value={a} onChange={setA} label="Criando um" />
-            <PalSelect value={b} onChange={setB} label="Criação II" />
-            <div className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                Resultados reprodutivos
-              </span>
-              <div className="flex h-11 items-center rounded-lg border border-input bg-muted/30 px-3 text-sm text-muted-foreground">
-                {result ? result.child.name : "Não selecionado"}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => a && b && setConfirmed({ a, b })}
-                disabled={!a || !b}
-                className="h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-40"
-                style={{ background: "oklch(0.65 0.2 250)" }}
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={() => {
-                  setA("");
-                  setB("");
-                  setConfirmed(null);
-                }}
-                className="h-11 rounded-lg bg-neutral-800 px-5 text-sm font-semibold text-white transition hover:bg-neutral-700"
-              >
-                Redefinir
-              </button>
-            </div>
+        {isLoading && (
+          <div className="rounded-2xl bg-white p-8 text-center text-sm text-muted-foreground shadow-sm">
+            Carregando dados oficiais de Palworld...
           </div>
-        </section>
-
-        <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="text-primary" style={{ color: "oklch(0.65 0.2 250)" }}>
-              ◆
-            </div>
-            <div className="text-sm">
-              <div className="font-semibold" style={{ color: "oklch(0.65 0.2 340)" }}>
-                Anúncios
-              </div>
-              <p className="text-foreground">
-                A biblioteca de criação foi atualizada para a versão oficial do jogo. Selecione
-                dois Pals acima e clique em <strong>Confirmar</strong> para descobrir o filhote
-                resultante.
-              </p>
-            </div>
+        )}
+        {error && (
+          <div className="rounded-2xl bg-red-50 p-6 text-sm text-red-700 shadow-sm">
+            Erro ao carregar dados. Verifique sua conexão e recarregue a página.
           </div>
-        </section>
-
-        {result && (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Resultado da criação
-            </h2>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <PalCard pal={result.pa} label="Pai 1" />
-              <div className="text-3xl font-light text-muted-foreground">+</div>
-              <PalCard pal={result.pb} label="Pai 2" />
-              <div className="text-3xl font-light text-muted-foreground">=</div>
-              <PalCard pal={result.child} label="Filhote" />
-            </div>
-          </section>
         )}
 
-        <section>
-          <h2 className="mb-4 px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Combinações populares
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-            {popular.map((combo, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-around gap-2 rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgba(80,120,200,0.10)]"
-              >
-                <PalCard pal={combo.pa} />
-                <div className="text-2xl font-light text-muted-foreground">+</div>
-                <PalCard pal={combo.pb} />
-                <div className="text-2xl font-light text-muted-foreground">=</div>
-                <PalCard pal={combo.child} />
+        {data && (
+          <>
+            <section className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end">
+                <PalSelect value={a} onChange={setA} label="Criando um" pals={data.pals} />
+                <PalSelect value={b} onChange={setB} label="Criação II" pals={data.pals} />
+                <div className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Resultados reprodutivos
+                  </span>
+                  <div className="flex h-11 items-center rounded-lg border border-input bg-muted/30 px-3 text-sm text-muted-foreground">
+                    {result
+                      ? result.child
+                        ? result.child.name
+                        : "Sem combinação registrada"
+                      : "Não selecionado"}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => a && b && setConfirmed({ a, b })}
+                    disabled={!a || !b}
+                    className="h-11 rounded-lg px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40"
+                    style={{ background: "oklch(0.6 0.2 250)" }}
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setA("");
+                      setB("");
+                      setConfirmed(null);
+                    }}
+                    className="h-11 rounded-lg bg-neutral-800 px-5 text-sm font-semibold text-white transition hover:bg-neutral-700"
+                  >
+                    Redefinir
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+
+            {result && (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Resultado da criação
+                </h2>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <PalCard pal={result.pa} label="Pai 1" />
+                  <div className="text-3xl font-light text-muted-foreground">+</div>
+                  <PalCard pal={result.pb} label="Pai 2" />
+                  <div className="text-3xl font-light text-muted-foreground">=</div>
+                  {result.child ? (
+                    <PalCard pal={result.child} label="Filhote" />
+                  ) : (
+                    <div className="rounded-2xl bg-muted p-6 text-center text-sm text-muted-foreground">
+                      Sem combinação
+                      <br />
+                      registrada
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Todas as combinações
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {filteredCombos.length.toLocaleString("pt-BR")} combinações · role a página para carregar mais
+                  </p>
+                </div>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Filtrar por nome (pai ou filhote)..."
+                  className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-72"
+                />
+              </div>
+            </section>
+
+            <section>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {filteredCombos.slice(0, visibleCount).map((combo, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-around gap-2 rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgba(80,120,200,0.08)]"
+                  >
+                    <PalCard pal={combo.parent1} />
+                    <div className="text-2xl font-light text-muted-foreground">+</div>
+                    <PalCard pal={combo.parent2} />
+                    <div className="text-2xl font-light text-muted-foreground">=</div>
+                    <PalCard pal={combo.child} />
+                  </div>
+                ))}
+              </div>
+              {visibleCount < filteredCombos.length && (
+                <div
+                  ref={sentinelRef}
+                  className="mt-6 flex justify-center py-6 text-sm text-muted-foreground"
+                >
+                  Carregando mais combinações...
+                </div>
+              )}
+              {filteredCombos.length === 0 && (
+                <div className="rounded-2xl bg-white p-8 text-center text-sm text-muted-foreground shadow-sm">
+                  Nenhuma combinação encontrada para "{query}".
+                </div>
+              )}
+            </section>
+          </>
+        )}
 
         <footer className="pt-4 text-center text-xs text-muted-foreground">
-          Dados baseados no sistema oficial de criação de Palworld. Fórmula: filhote com
-          <em> breed power </em> mais próximo de <code>⌊(pai1 + pai2 + 1) / 2⌋</code>.
+          Dados de{" "}
+          <a
+            href="https://github.com/mlg404/palworld-paldex-api"
+            className="underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            palworld-paldex-api
+          </a>
+          {" "}(MIT). Imagens © Palworld Wiki / Pocketpair.
         </footer>
       </div>
     </main>
