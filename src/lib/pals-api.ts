@@ -38,9 +38,13 @@ export interface PalData {
   combinations: Combination[];
 }
 
-function cleanImage(url: string): string {
-  // wikia URLs sometimes end with a trailing slash; strip it.
-  return url.replace(/\/$/, "");
+const CDN_BASE = "https://cdn.jsdelivr.net/gh/mlg404/palworld-paldex-api@main";
+
+function resolveImage(path: string): string {
+  // pals.json ships paths like "/public/images/paldeck/001.png".
+  if (!path) return "";
+  if (path.startsWith("http")) return path.replace(/\/$/, "");
+  return CDN_BASE + path;
 }
 
 export async function fetchPalData(): Promise<PalData> {
