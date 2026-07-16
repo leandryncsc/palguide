@@ -60,7 +60,8 @@ export async function fetchPalData(): Promise<PalData> {
 
   const pals: Pal[] = palsRaw.map((p) => ({
     ...p,
-    imageWiki: cleanImage(p.imageWiki || ""),
+    image: resolveImage(p.image || ""),
+    imageWiki: resolveImage(p.imageWiki || ""),
   }));
 
   const byKey = new Map<string, Pal>();
