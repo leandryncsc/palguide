@@ -58,7 +58,7 @@ function PalCard({ pal, label }: { pal: Pal; label?: string }) {
         }}
       >
         <img
-          src={pal.imageWiki}
+          src={pal.image || pal.imageWiki}
           alt={pal.name}
           loading="lazy"
           className="h-full w-full object-cover"
