@@ -5,7 +5,6 @@ const tabs = [
   { to: "/paldex", label: "Livro Ilustrado Pal" },
   { to: "/", label: "Pesquisas reprodutivas" },
   { to: "/iv", label: "Calculadora de valor individual" },
-  { to: "/mods", label: "Palu MOD" },
 ] as const;
 
 export function PalNav() {
