@@ -227,13 +227,19 @@ const CATEGORY_ORDER: Category[] = [
 ];
 
 function MapaPage() {
+  const [currentMap, setCurrentMap] = useState<MapId>("palpagos");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Set<Category>>(new Set(CATEGORY_ORDER));
   const [selected, setSelected] = useState<string | null>(null);
 
+  const mapMarkers = useMemo(
+    () => MARKERS.filter((m) => (m.map ?? "palpagos") === currentMap),
+    [currentMap],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return MARKERS.filter(
+    return mapMarkers.filter(
       (m) =>
         active.has(m.category) &&
         (q === "" ||
@@ -241,7 +247,7 @@ function MapaPage() {
           m.coord.toLowerCase().includes(q) ||
           (m.note ?? "").toLowerCase().includes(q)),
     );
-  }, [query, active]);
+  }, [query, active, mapMarkers]);
 
   function toggle(c: Category) {
     setActive((prev) => {
@@ -256,8 +262,9 @@ function MapaPage() {
     setActive(on ? new Set(CATEGORY_ORDER) : new Set());
   }
 
-  const selectedMarker = MARKERS.find((m) => m.id === selected);
-  const totalCount = MARKERS.length;
+  const selectedMarker = mapMarkers.find((m) => m.id === selected);
+  const totalCount = mapMarkers.length;
+  const mapInfo = MAPS[currentMap];
 
   return (
     <main className="min-h-screen px-4 py-6">
