@@ -370,8 +370,8 @@ function MapaPage() {
             <div className="relative overflow-hidden rounded-2xl bg-card shadow-sm">
               <div className="relative aspect-square w-full">
                 <img
-                  src={MAP_URL}
-                  alt="Mapa de Palpagos Island"
+                  src={mapInfo.image}
+                  alt={`Mapa de ${mapInfo.label}`}
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
                 />
