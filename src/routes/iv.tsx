@@ -102,13 +102,13 @@ function IvPage() {
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Nível (1 - 60)</span>
+              <span className="text-xs font-medium text-muted-foreground">Nível (1 - 80)</span>
               <input
                 type="number"
                 min={1}
-                max={60}
+                max={80}
                 value={level}
-                onChange={(e) => setLevel(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+                onChange={(e) => setLevel(Math.max(1, Math.min(80, Number(e.target.value) || 1)))}
                 className="h-11 rounded-lg border border-input bg-card px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
