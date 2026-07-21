@@ -158,7 +158,7 @@ function IvPage() {
                   </label>
                   <div className="mt-3 flex items-baseline justify-between">
                     <span className="text-3xl font-bold" style={{ color: r.color }}>
-                      {row.iv}
+                      {row.iv === null ? "—" : row.iv}
                     </span>
                     <span className="text-xs font-semibold" style={{ color: r.color }}>
                       {r.label}
