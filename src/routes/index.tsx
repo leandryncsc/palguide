@@ -220,11 +220,11 @@ function BreedingPage() {
                       : "Não selecionado"}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => a && b && setConfirmed({ a, b })}
                     disabled={!a || !b}
-                    className="h-11 rounded-lg px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40"
+                    className="h-11 flex-1 rounded-lg px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40 sm:flex-none"
                     style={{ background: "oklch(0.6 0.2 250)" }}
                   >
                     Confirmar
@@ -235,7 +235,7 @@ function BreedingPage() {
                       setB("");
                       setConfirmed(null);
                     }}
-                    className="h-11 rounded-lg bg-secondary px-5 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
+                    className="h-11 flex-1 rounded-lg bg-secondary px-5 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80 sm:flex-none"
                   >
                     Redefinir
                   </button>
