@@ -1,29 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PalNav } from "@/components/PalNav";
+import worldTreeMap from "@/assets/world-tree-map.jpg";
 
 export const Route = createFileRoute("/mapa")({
   head: () => ({
     meta: [
-      { title: "Mapa de Palpagos Island — Palworld" },
+      { title: "Mapas de Palworld — Palpagos Island & The World Tree" },
       {
         name: "description",
         content:
-          "Mapa interativo de Palpagos Island com localizações, Alpha Pals, torres, dungeons, ovos, recursos, pesca e NPCs em Palworld.",
+          "Mapas interativos de Palpagos Island e The World Tree com locais, Alpha Pals, torres, dungeons, ovos, recursos, pesca e NPCs em Palworld.",
       },
-      { property: "og:title", content: "Mapa de Palpagos Island — Palworld" },
+      { property: "og:title", content: "Mapas de Palworld — Palpagos & World Tree" },
       {
         property: "og:description",
         content:
-          "Filtros por categoria estilo palworld.th.gl: torres, alphas, dungeons, ovos, recursos, pesca e NPCs.",
+          "Filtros por categoria estilo palworld.th.gl para os dois mapas do jogo.",
       },
     ],
   }),
   component: MapaPage,
 });
 
-const MAP_URL =
-  "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Map.jpeg";
+type MapId = "palpagos" | "worldtree";
+
+const MAPS: Record<MapId, { label: string; image: string; description: string }> = {
+  palpagos: {
+    label: "Palpagos Island",
+    image: "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Map.jpeg",
+    description: "Mapa principal do jogo base, com Sakurajima e Feybreak nos limites.",
+  },
+  worldtree: {
+    label: "The World Tree",
+    image: worldTreeMap,
+    description: "Mapa da DLC Tides of Terraria — bioma central com a Árvore do Mundo.",
+  },
+};
 
 type Category =
   | "location"
@@ -37,6 +50,7 @@ type Category =
 
 type Marker = {
   id: string;
+  map: MapId;
   name: string;
   category: Category;
   level?: number | string;
