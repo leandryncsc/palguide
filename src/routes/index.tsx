@@ -187,33 +187,8 @@ function BreedingPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <header className="rounded-2xl bg-card/80 p-5 shadow-sm backdrop-blur">
-          <nav className="flex flex-wrap gap-2 text-sm">
-            {[
-              "Mapa Estratégia Pal",
-              "Livro Ilustrado Pal",
-              "Pesquisas reprodutivas",
-              "Calculadora de valor individual",
-              "Palu MOD",
-            ].map((tab, i) => {
-              const active = i === 2;
-              return (
-                <button
-                  key={tab}
-                  className={
-                    "rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (active
-                      ? "border-b-2 border-primary text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                  style={active ? { color: "oklch(0.55 0.2 250)", borderColor: "oklch(0.55 0.2 250)" } : undefined}
-                >
-                  {tab}
-                </button>
-              );
-            })}
-          </nav>
-        </header>
+        <PalNav />
+
 
         {isLoading && (
           <div className="rounded-2xl bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
