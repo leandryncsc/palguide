@@ -72,7 +72,13 @@ function IvPage() {
     };
   }, [hp, atk, def, baseHp, baseAtk, baseDef, level]);
 
-  const avg = Math.round((results.hp + results.atk + results.def) / 3);
+  const validIvs = [results.hp, results.atk, results.def].filter(
+    (v): v is number => v !== null,
+  );
+  const avg: number | null =
+    validIvs.length > 0
+      ? Math.round(validIvs.reduce((a, b) => a + b, 0) / validIvs.length)
+      : null;
   const selected = data?.byKey.get(palKey);
 
   return (
