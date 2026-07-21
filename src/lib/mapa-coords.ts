@@ -39,9 +39,9 @@ export function worldToLatLng(
 ): L.LatLngExpression {
   const nx = (x - bounds.minX) / (bounds.maxX - bounds.minX);
   const ny = (y - bounds.minY) / (bounds.maxY - bounds.minY);
-  // Leaflet lat grows downward with CRS.Simple; higher game Y = further "up" on the map,
-  // which visually is smaller pixel Y. So flip on lat.
-  const lat = (1 - ny) * TILE_SIZE;
+  // CRS.Simple default: lat = -pixelY. Top of map = lat 0, bottom = lat -TILE_SIZE.
+  // Higher game Y = further "up" on the map = pixel Y closer to 0 = lat closer to 0.
+  const lat = -(1 - ny) * TILE_SIZE;
   const lng = nx * TILE_SIZE;
   return [lat, lng];
 }
