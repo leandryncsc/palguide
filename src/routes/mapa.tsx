@@ -226,11 +226,9 @@ function MapaPage() {
 
   // Compute dynamic sub-lists per category, per map, with counts.
   const subsByCat = useMemo(() => {
-    const out: Record<CategoryKey, { key: string; label: string; count: number }[]> =
-      Object.fromEntries(CATEGORIES.map((c) => [c.key, []])) as Record<
-        CategoryKey,
-        { key: string; label: string; count: number }[]
-      >;
+    const out = Object.fromEntries(
+      CATEGORIES.map((c) => [c.key, [] as { key: string; label: string; count: number }[]]),
+    ) as Record<CategoryKey, { key: string; label: string; count: number }[]>;
     const counter = new Map<string, number>();
     for (const m of allMarkers) {
       if (m.map !== currentMap) continue;
