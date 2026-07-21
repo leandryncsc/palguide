@@ -72,7 +72,7 @@ function IvPage() {
   const selected = data?.byKey.get(palKey);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
+    <main className="min-h-screen px-4 py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <PalNav />
 
