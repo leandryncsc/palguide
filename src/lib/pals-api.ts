@@ -1,10 +1,14 @@
-// Public data source: mlg404/palworld-paldex-api on GitHub (MIT).
-// CORS is open on raw.githubusercontent.com so we fetch directly from the browser.
+// Public data source: tylercamp/palcalc on GitHub (MIT).
+// It ships a complete, datamined Palworld dataset (299 Pals, 44k+ combinations),
+// kept up to date with every DLC (Feybreak, Tides of Terraria, etc.).
 
-const PALS_URL =
-  "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/src/pals.json";
+const DB_URL =
+  "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.Model/db.json";
 const BREEDING_URL =
-  "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/src/breeding.json";
+  "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.Model/breeding.json";
+
+const ICON_BASE =
+  "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Pals";
 
 export interface PalType {
   name: string;
@@ -13,16 +17,17 @@ export interface PalType {
 
 export interface Pal {
   id: number;
-  key: string;
-  name: string;
+  key: string; // InternalName (stable id used by breeding.json)
+  name: string; // Localized display name (pt-BR when available)
   image: string;
   imageWiki: string;
   wiki: string;
   types: PalType[];
   description?: string;
+  breedingPower: number;
+  variant: boolean;
 }
 
-// breeding.json shape: { [childKey: string]: Array<[parentKey1, parentKey2]> }
 export type BreedingMap = Record<string, Array<[string, string]>>;
 
 export interface Combination {
@@ -38,45 +43,71 @@ export interface PalData {
   combinations: Combination[];
 }
 
-const CDN_BASE = "https://cdn.jsdelivr.net/gh/mlg404/palworld-paldex-api@main";
+interface RawPal {
+  Id: { PalDexNo: number; IsVariant: boolean };
+  Name: string;
+  LocalizedNames: Record<string, string> | null;
+  InternalName: string;
+  BreedingPower: number;
+}
 
-function resolveImage(path: string): string {
-  // pals.json ships paths like "/public/images/paldeck/001.png".
-  if (!path) return "";
-  if (path.startsWith("http")) return path.replace(/\/$/, "");
-  return CDN_BASE + path;
+interface RawBreedingEntry {
+  Parent1InternalName: string;
+  Parent2InternalName: string;
+  ChildInternalName: string;
+}
+
+function iconUrl(displayName: string): string {
+  // palcalc file names use the display name with spaces, e.g. "Azurobe Cryst.png".
+  return `${ICON_BASE}/${encodeURIComponent(displayName)}.png`;
+}
+
+function localizedName(p: RawPal): string {
+  const loc = p.LocalizedNames;
+  if (loc) {
+    return loc["pt-BR"] || loc["pt"] || loc["en"] || p.Name;
+  }
+  return p.Name;
 }
 
 export async function fetchPalData(): Promise<PalData> {
-  const [palsRes, breedingRes] = await Promise.all([
-    fetch(PALS_URL),
+  const [dbRes, breedRes] = await Promise.all([
+    fetch(DB_URL),
     fetch(BREEDING_URL),
   ]);
-  if (!palsRes.ok || !breedingRes.ok) {
+  if (!dbRes.ok || !breedRes.ok) {
     throw new Error("Falha ao carregar dados de Palworld");
   }
-  const palsRaw = (await palsRes.json()) as Pal[];
-  const breeding = (await breedingRes.json()) as BreedingMap;
+  const db = (await dbRes.json()) as { Pals: RawPal[] };
+  const breedRaw = (await breedRes.json()) as { Breeding: RawBreedingEntry[] };
 
-  const pals: Pal[] = palsRaw.map((p) => ({
-    ...p,
-    image: resolveImage(p.image || ""),
-    imageWiki: resolveImage(p.imageWiki || ""),
-  }));
+  const pals: Pal[] = db.Pals.map((p) => {
+    const img = iconUrl(p.Name);
+    return {
+      id: p.Id.PalDexNo,
+      key: p.InternalName,
+      name: localizedName(p),
+      image: img,
+      imageWiki: img,
+      wiki: "",
+      types: [],
+      breedingPower: p.BreedingPower,
+      variant: p.Id.IsVariant,
+    };
+  });
 
   const byKey = new Map<string, Pal>();
   for (const p of pals) byKey.set(p.key, p);
 
+  const breeding: BreedingMap = {};
   const combinations: Combination[] = [];
-  for (const [childKey, pairs] of Object.entries(breeding)) {
-    const child = byKey.get(childKey);
-    if (!child) continue;
-    for (const [k1, k2] of pairs) {
-      const p1 = byKey.get(k1);
-      const p2 = byKey.get(k2);
-      if (!p1 || !p2) continue;
-      combinations.push({ parent1: p1, parent2: p2, child });
-    }
+  for (const b of breedRaw.Breeding) {
+    const p1 = byKey.get(b.Parent1InternalName);
+    const p2 = byKey.get(b.Parent2InternalName);
+    const child = byKey.get(b.ChildInternalName);
+    if (!p1 || !p2 || !child) continue;
+    combinations.push({ parent1: p1, parent2: p2, child });
+    (breeding[child.key] ??= []).push([p1.key, p2.key]);
   }
 
   return { pals, byKey, breeding, combinations };
