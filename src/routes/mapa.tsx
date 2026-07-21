@@ -150,6 +150,55 @@ const MARKERS: Marker[] = [
   { id: "n5", name: "Comerciante Negro", category: "npc", coord: "(-380, -518)", x: 34, y: 66 },
   { id: "n6", name: "Mestre de Cavalaria — Sakurajima", category: "npc", coord: "(-780, 60)", x: 18, y: 45, note: "DLC." },
   { id: "n7", name: "Comerciante — Feybreak", category: "npc", coord: "(-1180, -320)", x: 8, y: 58, note: "DLC." },
+
+  // ===== The World Tree (DLC Tides of Terraria) =====
+  // Locais
+  { id: "wl1", map: "worldtree", name: "Fast Travel — Base da Árvore", category: "location", coord: "(0, 0)", x: 50, y: 50, note: "Centro do mapa." },
+  { id: "wl2", map: "worldtree", name: "Fast Travel — Pico Nevado", category: "location", coord: "(-200, 380)", x: 40, y: 30, note: "Norte gelado." },
+  { id: "wl3", map: "worldtree", name: "Fast Travel — Cratera Vulcânica", category: "location", coord: "(250, 350)", x: 62, y: 30, note: "Nordeste vulcânico." },
+  { id: "wl4", map: "worldtree", name: "Fast Travel — Deserto Dourado", category: "location", coord: "(-300, -100)", x: 30, y: 55, note: "Sudoeste árido." },
+  { id: "wl5", map: "worldtree", name: "Fast Travel — Floresta Sombria", category: "location", coord: "(150, -300)", x: 55, y: 68, note: "Sul misterioso." },
+
+  // Torres
+  { id: "wt1", map: "worldtree", name: "Torre da Árvore — Terraria & Yggdrasil", category: "tower", level: 65, coord: "(0, 50)", x: 50, y: 47, note: "Chefe final da DLC." },
+
+  // Alphas
+  { id: "wa1", map: "worldtree", name: "Alpha Yggverbird", category: "alpha", level: 55, coord: "(-150, 250)", x: 42, y: 35 },
+  { id: "wa2", map: "worldtree", name: "Alpha Pyroclast", category: "alpha", level: 58, coord: "(280, 300)", x: 63, y: 32 },
+  { id: "wa3", map: "worldtree", name: "Alpha Aurorion", category: "alpha", level: 55, coord: "(-250, 350)", x: 38, y: 30 },
+  { id: "wa4", map: "worldtree", name: "Alpha Duneling", category: "alpha", level: 52, coord: "(-320, -150)", x: 29, y: 57 },
+  { id: "wa5", map: "worldtree", name: "Alpha Umbrafox", category: "alpha", level: 56, coord: "(180, -280)", x: 56, y: 66 },
+  { id: "wa6", map: "worldtree", name: "Alpha Rootguard", category: "alpha", level: 60, coord: "(60, 100)", x: 53, y: 45, note: "Guardião da árvore." },
+
+  // Dungeons
+  { id: "wd1", map: "worldtree", name: "Dungeon das Raízes", category: "dungeon", level: "50-60", coord: "(-80, 60)", x: 46, y: 47 },
+  { id: "wd2", map: "worldtree", name: "Dungeon Vulcânica das Cinzas", category: "dungeon", level: "55-65", coord: "(260, 320)", x: 62, y: 31 },
+  { id: "wd3", map: "worldtree", name: "Dungeon do Deserto Antigo", category: "dungeon", level: "50-60", coord: "(-320, -120)", x: 29, y: 56 },
+
+  // Ovos
+  { id: "we1", map: "worldtree", name: "Ovo Enraizado (Grande)", category: "egg", coord: "(20, 60)", x: 51, y: 47, note: "Perto da árvore." },
+  { id: "we2", map: "worldtree", name: "Ovo Aquecido", category: "egg", coord: "(240, 300)", x: 61, y: 32 },
+  { id: "we3", map: "worldtree", name: "Ovo Congelado", category: "egg", coord: "(-200, 340)", x: 40, y: 31 },
+  { id: "we4", map: "worldtree", name: "Ovo Sombrio", category: "egg", coord: "(160, -260)", x: 55, y: 65 },
+  { id: "we5", map: "worldtree", name: "Ovo Rochoso", category: "egg", coord: "(-280, -80)", x: 31, y: 54 },
+  { id: "we6", map: "worldtree", name: "Ovo Dragônico", category: "egg", coord: "(80, 180)", x: 53, y: 40 },
+
+  // Recursos
+  { id: "wr1", map: "worldtree", name: "Seiva da Árvore do Mundo", category: "resource", coord: "(0, 100)", x: 50, y: 45, note: "Exclusivo DLC." },
+  { id: "wr2", map: "worldtree", name: "Obsidiana Vulcânica", category: "resource", coord: "(270, 310)", x: 62, y: 31 },
+  { id: "wr3", map: "worldtree", name: "Cristal Congelado", category: "resource", coord: "(-220, 350)", x: 39, y: 30 },
+  { id: "wr4", map: "worldtree", name: "Areia Dourada", category: "resource", coord: "(-310, -120)", x: 29, y: 56 },
+  { id: "wr5", map: "worldtree", name: "Fragmento Sombrio", category: "resource", coord: "(170, -270)", x: 55, y: 66 },
+
+  // Pesca
+  { id: "wf1", map: "worldtree", name: "Pesca — Lago da Árvore", category: "fishing", coord: "(-40, -30)", x: 48, y: 52 },
+  { id: "wf2", map: "worldtree", name: "Pesca — Rio Vulcânico", category: "fishing", coord: "(230, 250)", x: 60, y: 35 },
+  { id: "wf3", map: "worldtree", name: "Pesca — Oásis do Deserto", category: "fishing", coord: "(-290, -60)", x: 30, y: 53 },
+
+  // NPCs
+  { id: "wn1", map: "worldtree", name: "Guardiã da Árvore", category: "npc", coord: "(10, 40)", x: 50, y: 48 },
+  { id: "wn2", map: "worldtree", name: "Comerciante das Raízes", category: "npc", coord: "(-30, -20)", x: 48, y: 52 },
+  { id: "wn3", map: "worldtree", name: "Ferreiro Vulcânico", category: "npc", coord: "(260, 290)", x: 62, y: 32 },
 ];
 
 const CATEGORY_META: Record<
