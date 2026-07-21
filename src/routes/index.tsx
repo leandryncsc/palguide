@@ -42,14 +42,14 @@ function TypeBadge({ t }: { t: string }) {
 
 function PalCard({ pal, label }: { pal: Pal; label?: string }) {
   return (
-    <div className="flex min-w-[120px] flex-col items-center gap-2 rounded-2xl bg-card p-3 shadow-[0_4px_20px_rgba(80,120,200,0.10)]">
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.10)] sm:min-w-[120px] sm:flex-none sm:gap-2 sm:p-3">
       {label && (
         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
       )}
       <div
-        className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-white shadow-inner"
+        className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white shadow-inner sm:h-16 sm:w-16"
         style={{
           background:
             pal.types[0] &&
@@ -68,8 +68,8 @@ function PalCard({ pal, label }: { pal: Pal; label?: string }) {
           }}
         />
       </div>
-      <div className="text-center">
-        <div className="text-sm font-semibold text-foreground">{pal.name}</div>
+      <div className="w-full min-w-0 text-center">
+        <div className="truncate text-xs font-semibold text-foreground sm:text-sm">{pal.name}</div>
         <div className="mt-0.5 flex flex-wrap justify-center gap-1">
           {pal.types.map((t) => (
             <TypeBadge key={t.name} t={t.name} />
