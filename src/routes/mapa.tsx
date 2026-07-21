@@ -308,17 +308,26 @@ function MapaPage() {
     [currentMap],
   );
 
+  // Subcategories deselected per category (empty set = all subs active)
+  const [excludedSubs, setExcludedSubs] = useState<Record<Category, Set<string>>>(
+    () => Object.fromEntries(CATEGORY_ORDER.map((c) => [c, new Set<string>()])) as Record<Category, Set<string>>,
+  );
+  const [expanded, setExpanded] = useState<Set<Category>>(new Set(["location"]));
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return mapMarkers.filter(
-      (m) =>
-        active.has(m.category) &&
-        (q === "" ||
-          m.name.toLowerCase().includes(q) ||
-          m.coord.toLowerCase().includes(q) ||
-          (m.note ?? "").toLowerCase().includes(q)),
-    );
-  }, [query, active, mapMarkers]);
+    return mapMarkers.filter((m) => {
+      if (!active.has(m.category)) return false;
+      const sub = subKeyOf(m);
+      if (sub && excludedSubs[m.category].has(sub)) return false;
+      if (q === "") return true;
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.coord.toLowerCase().includes(q) ||
+        (m.note ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [query, active, excludedSubs, mapMarkers]);
 
   function toggle(c: Category) {
     setActive((prev) => {
@@ -329,6 +338,31 @@ function MapaPage() {
     });
   }
 
+  function toggleExpanded(c: Category) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }
+
+  function toggleSub(c: Category, sub: string) {
+    setExcludedSubs((prev) => {
+      const next = { ...prev, [c]: new Set(prev[c]) };
+      if (next[c].has(sub)) next[c].delete(sub);
+      else next[c].add(sub);
+      return next;
+    });
+  }
+
+  function setAllSubs(c: Category, on: boolean) {
+    setExcludedSubs((prev) => {
+      const allKeys = SUBCATEGORIES[c].map((s) => s.key);
+      return { ...prev, [c]: on ? new Set() : new Set(allKeys) };
+    });
+  }
+
   function setAll(on: boolean) {
     setActive(on ? new Set(CATEGORY_ORDER) : new Set());
   }
@@ -336,6 +370,7 @@ function MapaPage() {
   const selectedMarker = mapMarkers.find((m) => m.id === selected);
   const totalCount = mapMarkers.length;
   const mapInfo = MAPS[currentMap];
+
 
   return (
     <main className="min-h-screen px-4 py-6">
