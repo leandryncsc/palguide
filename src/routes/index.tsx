@@ -239,7 +239,7 @@ function BreedingPage() {
                   <button
                     onClick={() => a && b && setConfirmed({ a, b })}
                     disabled={!a || !b}
-                    className="h-11 rounded-lg px-5 text-sm font-semibold text-secondary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-40"
+                    className="h-11 rounded-lg px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40"
                     style={{ background: "oklch(0.6 0.2 250)" }}
                   >
                     Confirmar
