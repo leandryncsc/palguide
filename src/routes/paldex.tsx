@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { fetchPalData, type Pal, type PalData, WORK_LABELS } from "@/lib/pals-api";
+import {
+  fetchPalData,
+  type Pal,
+  type PalData,
+  type WorkSuitability,
+  WORK_LABELS,
+} from "@/lib/pals-api";
 import { PalNav } from "@/components/PalNav";
+
+type NocturnalFilter = "any" | "yes" | "no";
+type WorkKey = keyof WorkSuitability;
 
 export const Route = createFileRoute("/paldex")({
   head: () => ({
@@ -246,15 +255,36 @@ function PaldexPage() {
     staleTime: 1000 * 60 * 60,
   });
   const [query, setQuery] = useState("");
+  const [nocturnal, setNocturnal] = useState<NocturnalFilter>("any");
+  const [works, setWorks] = useState<WorkKey[]>([]);
   const [selected, setSelected] = useState<Pal | null>(null);
+
+  const toggleWork = (k: WorkKey) =>
+    setWorks((prev) => (prev.includes(k) ? prev.filter((w) => w !== k) : [...prev, k]));
+
+  const reset = () => {
+    setQuery("");
+    setNocturnal("any");
+    setWorks([]);
+  };
 
   const filtered = useMemo(() => {
     if (!data) return [];
     const q = query.trim().toLowerCase();
-    const sorted = [...data.pals].sort((a, b) => a.id - b.id || Number(a.variant) - Number(b.variant));
-    if (!q) return sorted;
-    return sorted.filter((p) => p.name.toLowerCase().includes(q) || String(p.id).includes(q));
-  }, [data, query]);
+    const sorted = [...data.pals].sort(
+      (a, b) => a.id - b.id || Number(a.variant) - Number(b.variant),
+    );
+    return sorted.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q) && !String(p.id).includes(q)) return false;
+      if (nocturnal === "yes" && !p.nocturnal) return false;
+      if (nocturnal === "no" && p.nocturnal) return false;
+      if (works.length && !works.every((w) => p.workSuitability[w] > 0)) return false;
+      return true;
+    });
+  }, [data, query, nocturnal, works]);
+
+  const workKeys = Object.keys(WORK_LABELS) as WorkKey[];
+  const activeCount = (nocturnal !== "any" ? 1 : 0) + works.length;
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
@@ -279,6 +309,69 @@ function PaldexPage() {
               className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-72"
             />
           </div>
+
+          <div className="mt-5 space-y-4 border-t border-border pt-4">
+            <div className="grid grid-cols-[110px_1fr] items-start gap-3">
+              <span className="pt-1.5 text-sm font-semibold text-foreground">Noturno</span>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  ["any", "todos"],
+                  ["no", "não"],
+                  ["yes", "sim"],
+                ] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setNocturnal(val)}
+                    className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+                      nocturnal === val
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-muted/30 text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[110px_1fr] items-start gap-3">
+              <span className="pt-1.5 text-sm font-semibold text-foreground">
+                Adaptabilidade ao trabalho
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {workKeys.map((k) => {
+                  const on = works.includes(k);
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => toggleWork(k)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        on
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-muted/30 text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {WORK_LABELS[k]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={reset}
+                className="rounded-lg bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
+              >
+                Reiniciar
+              </button>
+              {activeCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {activeCount} filtro{activeCount > 1 ? "s" : ""} ativo{activeCount > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
         </section>
 
         {isLoading && (
@@ -292,7 +385,13 @@ function PaldexPage() {
           </div>
         )}
 
-        {data && (
+        {data && filtered.length === 0 && !isLoading && (
+          <div className="rounded-2xl bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
+            Nenhum Pal encontrado com os filtros selecionados.
+          </div>
+        )}
+
+        {data && filtered.length > 0 && (
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {filtered.map((p) => (
               <PalTile key={`${p.key}-${p.id}`} pal={p} onClick={() => setSelected(p)} />
