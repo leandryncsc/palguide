@@ -174,7 +174,7 @@ function IvPage() {
               {selected ? `IV médio de ${selected.name}` : "IV médio"}
             </div>
             <div className="text-2xl font-bold" style={{ color: ratingLabel(avg).color }}>
-              {avg} · {ratingLabel(avg).label}
+              {avg === null ? "—" : `${avg} · ${ratingLabel(avg).label}`}
             </div>
           </div>
 
