@@ -176,13 +176,7 @@ function BreedingPage() {
   }, [data, confirmed]);
 
   return (
-    <main
-      className="min-h-screen px-4 py-8"
-      style={{
-        background:
-          "linear-gradient(180deg, oklch(0.96 0.03 230) 0%, oklch(0.98 0.015 220) 100%)",
-      }}
-    >
+    <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <header className="rounded-2xl bg-card/80 p-5 shadow-sm backdrop-blur">
           <nav className="flex flex-wrap gap-2 text-sm">
