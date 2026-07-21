@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { fetchPalData, type Pal, type PalData, WORK_LABELS } from "@/lib/pals-api";
+import {
+  fetchPalData,
+  type Pal,
+  type PalData,
+  type WorkSuitability,
+  WORK_LABELS,
+} from "@/lib/pals-api";
 import { PalNav } from "@/components/PalNav";
+
+type NocturnalFilter = "any" | "yes" | "no";
+type WorkKey = keyof WorkSuitability;
 
 export const Route = createFileRoute("/paldex")({
   head: () => ({
