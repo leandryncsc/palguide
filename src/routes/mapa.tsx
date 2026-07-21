@@ -443,31 +443,103 @@ function MapaPage() {
               {CATEGORY_ORDER.map((c) => {
                 const on = active.has(c);
                 const meta = CATEGORY_META[c];
-                const count = mapMarkers.filter((m) => m.category === c).length;
+                const catMarkers = mapMarkers.filter((m) => m.category === c);
+                const total = catMarkers.length;
+                const excluded = excludedSubs[c];
+                const activeCount = catMarkers.filter((m) => {
+                  const s = subKeyOf(m);
+                  return !s || !excluded.has(s);
+                }).length;
+                const isOpen = expanded.has(c);
+                const subs = SUBCATEGORIES[c];
+
                 return (
-                  <li key={c}>
-                    <button
-                      onClick={() => toggle(c)}
-                      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        on
-                          ? "border-transparent bg-muted text-foreground"
-                          : "border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <span
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-xs"
-                        style={{ background: on ? meta.color : "transparent", border: on ? "none" : `1px solid ${meta.color}` }}
+                  <li key={c} className="rounded-lg border border-border overflow-hidden">
+                    <div className={`flex items-center gap-2 px-2 py-2 text-sm ${on ? "bg-muted" : ""}`}>
+                      <button
+                        onClick={() => toggle(c)}
+                        aria-label={`Alternar ${meta.label}`}
+                        className="flex items-center gap-2 flex-1 text-left"
                       >
-                        {meta.icon}
-                      </span>
-                      <span className="flex-1 font-medium">{meta.label}</span>
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-xs"
+                          style={{ background: on ? meta.color : "transparent", border: on ? "none" : `1px solid ${meta.color}` }}
+                        >
+                          {meta.icon}
+                        </span>
+                        <span className={`font-medium ${on ? "text-foreground" : "text-muted-foreground"}`}>
+                          {meta.label}
+                        </span>
+                      </button>
                       <span className="font-mono text-[10px] text-muted-foreground">
-                        {on ? count : `0/${count}`}
+                        {on ? `${activeCount}/${total}` : `0/${total}`}
                       </span>
-                    </button>
+                      {subs.length > 1 && (
+                        <button
+                          onClick={() => toggleExpanded(c)}
+                          aria-label={isOpen ? "Recolher" : "Expandir"}
+                          className="text-muted-foreground hover:text-foreground text-xs w-5 text-center"
+                        >
+                          {isOpen ? "▾" : "▸"}
+                        </button>
+                      )}
+                    </div>
+
+                    {isOpen && subs.length > 1 && (
+                      <div className="border-t border-border bg-background/50 p-2">
+                        <div className="mb-1 flex items-center justify-between px-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <span>Subcategorias</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => setAllSubs(c, true)} className="hover:text-foreground">
+                              Todas
+                            </button>
+                            <span className="text-border">·</span>
+                            <button onClick={() => setAllSubs(c, false)} className="hover:text-foreground">
+                              Nenhuma
+                            </button>
+                          </div>
+                        </div>
+                        <ul className="grid grid-cols-1 gap-0.5">
+                          {subs.map((s) => {
+                            const subOn = !excluded.has(s.key);
+                            const subCount = catMarkers.filter((m) => subKeyOf(m) === s.key).length;
+                            const disabled = subCount === 0;
+                            return (
+                              <li key={s.key}>
+                                <button
+                                  onClick={() => toggleSub(c, s.key)}
+                                  disabled={disabled}
+                                  className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition ${
+                                    disabled
+                                      ? "text-muted-foreground/40 cursor-not-allowed"
+                                      : subOn
+                                        ? "bg-muted text-foreground"
+                                        : "text-muted-foreground hover:bg-muted/50"
+                                  }`}
+                                >
+                                  <span
+                                    className={`flex h-4 w-4 items-center justify-center rounded border text-[9px] ${
+                                      subOn && !disabled ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                                    }`}
+                                  >
+                                    {subOn && !disabled ? "✓" : ""}
+                                  </span>
+                                  <span className="text-[11px]">{s.icon}</span>
+                                  <span className="flex-1 truncate">{s.label}</span>
+                                  <span className="font-mono text-[9px] text-muted-foreground">
+                                    {subCount}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                   </li>
                 );
               })}
+
             </ul>
           </aside>
 
