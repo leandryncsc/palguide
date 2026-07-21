@@ -226,6 +226,77 @@ const CATEGORY_ORDER: Category[] = [
   "npc",
 ];
 
+type SubDef = { key: string; label: string; icon: string; match: (m: Marker) => boolean };
+
+const SUBCATEGORIES: Record<Category, SubDef[]> = {
+  location: [
+    { key: "fast_travel", label: "Fast Travel", icon: "🚩", match: (m) => m.name.startsWith("Fast Travel") },
+    { key: "statue", label: "Estátua de Poder", icon: "🗿", match: (m) => m.name.includes("Santuário") || (m.note ?? "").includes("Estátua") },
+    { key: "base", label: "Ponto Base", icon: "🏕️", match: (m) => m.name.includes("Base") && !m.name.startsWith("Fast Travel") },
+    { key: "warp", label: "Ponto de Warp", icon: "🌀", match: () => false },
+    { key: "respawn", label: "Ponto de Respawn", icon: "♻️", match: () => false },
+    { key: "watchtower", label: "Torre de Vigia", icon: "🔭", match: () => false },
+  ],
+  tower: [
+    { key: "boss_tower", label: "Torre de Chefe", icon: "🗼", match: () => true },
+  ],
+  alpha: [
+    { key: "base_game", label: "Jogo Base", icon: "⚔️", match: (m) => !(m.note ?? "").includes("DLC") },
+    { key: "dlc_sakura", label: "DLC Sakurajima", icon: "🌸", match: (m) => (m.note ?? "").includes("Sakurajima") },
+    { key: "dlc_feybreak", label: "DLC Feybreak", icon: "❄️", match: (m) => (m.note ?? "").includes("Feybreak") },
+    { key: "dlc_worldtree", label: "DLC World Tree", icon: "🌳", match: (m) => m.map === "worldtree" },
+  ],
+  dungeon: [
+    { key: "normal", label: "Dungeon Normal", icon: "🏰", match: () => true },
+    { key: "sealed", label: "Dungeon Selada", icon: "🔒", match: () => false },
+  ],
+  egg: [
+    { key: "common", label: "Comum", icon: "🥚", match: (m) => m.name.includes("Comum") },
+    { key: "hot", label: "Aquecido (Fogo)", icon: "🔥", match: (m) => m.name.includes("Aquecido") },
+    { key: "damp", label: "Molhado (Água)", icon: "💧", match: (m) => m.name.includes("Molhado") },
+    { key: "frozen", label: "Congelado (Gelo)", icon: "❄️", match: (m) => m.name.includes("Congelado") },
+    { key: "verdant", label: "Enraizado (Grama)", icon: "🌿", match: (m) => m.name.includes("Enraizado") },
+    { key: "electric", label: "Elétrico", icon: "⚡", match: (m) => m.name.includes("Elétrico") },
+    { key: "dark", label: "Sombrio", icon: "🌑", match: (m) => m.name.includes("Sombrio") },
+    { key: "rocky", label: "Rochoso (Terra)", icon: "🪨", match: (m) => m.name.includes("Rochoso") },
+    { key: "dragon", label: "Dragônico", icon: "🐉", match: (m) => m.name.includes("Dragônico") },
+  ],
+  resource: [
+    { key: "iron", label: "Ferro", icon: "⛓️", match: (m) => m.name.includes("Ferro") },
+    { key: "coal", label: "Carvão", icon: "🪨", match: (m) => m.name.includes("Carvão") },
+    { key: "sulfur", label: "Enxofre", icon: "🧪", match: (m) => m.name.includes("Enxofre") },
+    { key: "quartz", label: "Quartzo", icon: "💎", match: (m) => m.name.includes("Quartzo") },
+    { key: "fluid", label: "Fluido", icon: "🫧", match: (m) => m.name.includes("Fluido") },
+    { key: "aluminum", label: "Alumínio", icon: "🥈", match: (m) => m.name.includes("Alumínio") },
+    { key: "silver", label: "Prata", icon: "🪙", match: (m) => m.name.includes("Prata") },
+    { key: "oil", label: "Petróleo", icon: "🛢️", match: (m) => m.name.includes("Petróleo") },
+    { key: "obsidian", label: "Obsidiana", icon: "🖤", match: (m) => m.name.includes("Obsidiana") },
+    { key: "crystal", label: "Cristal", icon: "🔷", match: (m) => m.name.includes("Cristal") },
+    { key: "sand", label: "Areia Dourada", icon: "🏜️", match: (m) => m.name.includes("Areia") },
+    { key: "shard", label: "Fragmento", icon: "✨", match: (m) => m.name.includes("Fragmento") && !m.name.includes("Fluido") },
+    { key: "sap", label: "Seiva do Mundo", icon: "🌳", match: (m) => m.name.includes("Seiva") },
+  ],
+  fishing: [
+    { key: "spot", label: "Ponto de Pesca", icon: "🎣", match: () => true },
+  ],
+  npc: [
+    { key: "merchant", label: "Comerciante", icon: "🧑‍💼", match: (m) => m.name.includes("Comerciante") && !m.name.includes("Negro") },
+    { key: "pal_merchant", label: "Mercador de Pals", icon: "🧑‍🌾", match: (m) => m.name.includes("Mercador de Pals") },
+    { key: "medic", label: "Médico Ambulante", icon: "⚕️", match: (m) => m.name.includes("Médico") },
+    { key: "black_market", label: "Mercado Negro", icon: "🕶️", match: (m) => m.name.includes("Negro") },
+    { key: "cavalry", label: "Mestre de Cavalaria", icon: "🐴", match: (m) => m.name.includes("Cavalaria") },
+    { key: "smith", label: "Ferreiro", icon: "🔨", match: (m) => m.name.includes("Ferreiro") },
+    { key: "guardian", label: "Guardião", icon: "🛡️", match: (m) => m.name.includes("Guardiã") || m.name.includes("Guardião") },
+  ],
+};
+
+function subKeyOf(m: Marker): string | null {
+  const subs = SUBCATEGORIES[m.category];
+  for (const s of subs) if (s.match(m)) return s.key;
+  return null;
+}
+
+
 function MapaPage() {
   const [currentMap, setCurrentMap] = useState<MapId>("palpagos");
   const [query, setQuery] = useState("");
