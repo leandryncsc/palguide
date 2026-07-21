@@ -48,7 +48,7 @@ function buildIcon(color: string, node: React.ReactNode, highlighted: boolean) {
 function FitOnMapChange({ mapId }: { mapId: MapId }) {
   const map = useMap();
   useEffect(() => {
-    const bounds = L.latLngBounds([0, 0], [TILE_SIZE, TILE_SIZE]);
+    const bounds = L.latLngBounds([-TILE_SIZE, 0], [0, TILE_SIZE]);
     map.setMaxBounds(bounds.pad(0.2));
     map.fitBounds(bounds);
   }, [map, mapId]);
