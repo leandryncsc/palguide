@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PalNav } from "@/components/PalNav";
-import worldTreeMap from "@/assets/world-tree-map.jpg";
+import worldTreeMap from "@/assets/world-tree-map.png.asset.json";
 
 export const Route = createFileRoute("/mapa")({
   head: () => ({
@@ -33,7 +33,7 @@ const MAPS: Record<MapId, { label: string; image: string; description: string }>
   },
   worldtree: {
     label: "The World Tree",
-    image: worldTreeMap,
+    image: worldTreeMap.url,
     description: "Mapa da DLC Tides of Terraria — bioma central com a Árvore do Mundo.",
   },
 };
