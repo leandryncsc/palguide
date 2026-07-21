@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PaldexRouteImport } from './routes/paldex'
+import { Route as ModsRouteImport } from './routes/mods'
+import { Route as MapaRouteImport } from './routes/mapa'
+import { Route as IvRouteImport } from './routes/iv'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PaldexRoute = PaldexRouteImport.update({
+  id: '/paldex',
+  path: '/paldex',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsRoute = ModsRouteImport.update({
+  id: '/mods',
+  path: '/mods',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapaRoute = MapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IvRoute = IvRouteImport.update({
+  id: '/iv',
+  path: '/iv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/iv': typeof IvRoute
+  '/mapa': typeof MapaRoute
+  '/mods': typeof ModsRoute
+  '/paldex': typeof PaldexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/iv': typeof IvRoute
+  '/mapa': typeof MapaRoute
+  '/mods': typeof ModsRoute
+  '/paldex': typeof PaldexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/iv': typeof IvRoute
+  '/mapa': typeof MapaRoute
+  '/mods': typeof ModsRoute
+  '/paldex': typeof PaldexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/iv' | '/mapa' | '/mods' | '/paldex'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/iv' | '/mapa' | '/mods' | '/paldex'
+  id: '__root__' | '/' | '/iv' | '/mapa' | '/mods' | '/paldex'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  IvRoute: typeof IvRoute
+  MapaRoute: typeof MapaRoute
+  ModsRoute: typeof ModsRoute
+  PaldexRoute: typeof PaldexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/paldex': {
+      id: '/paldex'
+      path: '/paldex'
+      fullPath: '/paldex'
+      preLoaderRoute: typeof PaldexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mods': {
+      id: '/mods'
+      path: '/mods'
+      fullPath: '/mods'
+      preLoaderRoute: typeof ModsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapa': {
+      id: '/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof MapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/iv': {
+      id: '/iv'
+      path: '/iv'
+      fullPath: '/iv'
+      preLoaderRoute: typeof IvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +121,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  IvRoute: IvRoute,
+  MapaRoute: MapaRoute,
+  ModsRoute: ModsRoute,
+  PaldexRoute: PaldexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
