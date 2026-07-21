@@ -23,13 +23,17 @@ export const Route = createFileRoute("/iv")({
 // Fórmula aproximada de Palworld:
 // Stat = (Base + IV) * (1 + (Level - 1) * 0.02) * Souls * Passives
 // Simplificamos ignorando Souls/Passives; IV varia de 0 a 100.
-function estimateIv(current: number, base: number, level: number): number {
+function estimateIv(current: number, base: number, level: number): number | null {
+  if (!current || current <= 0 || !base || base <= 0) return null;
   const levelMult = 1 + (level - 1) * 0.02;
   const iv = current / levelMult - base;
-  return Math.max(0, Math.min(100, Math.round(iv)));
+  return Math.round(iv);
 }
 
-function ratingLabel(iv: number): { label: string; color: string } {
+function ratingLabel(iv: number | null): { label: string; color: string } {
+  if (iv === null) return { label: "—", color: "oklch(0.6 0.02 250)" };
+  if (iv < 0) return { label: "Valor abaixo da base", color: "oklch(0.65 0.15 30)" };
+  if (iv > 100) return { label: "Acima de 100 (verifique)", color: "oklch(0.7 0.15 60)" };
   if (iv >= 90) return { label: "Excepcional", color: "oklch(0.75 0.18 145)" };
   if (iv >= 70) return { label: "Excelente", color: "oklch(0.75 0.15 190)" };
   if (iv >= 50) return { label: "Bom", color: "oklch(0.75 0.15 250)" };
