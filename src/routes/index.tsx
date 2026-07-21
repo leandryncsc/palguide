@@ -133,17 +133,26 @@ function BreedingPage() {
   const [query, setQuery] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredCombos = useMemo(() => {
+  const shuffledCombos = useMemo(() => {
     if (!data) return [];
+    const arr = [...data.combinations];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [data]);
+
+  const filteredCombos = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return data.combinations;
-    return data.combinations.filter(
+    if (!q) return shuffledCombos;
+    return shuffledCombos.filter(
       (c) =>
         c.parent1.name.toLowerCase().includes(q) ||
         c.parent2.name.toLowerCase().includes(q) ||
         c.child.name.toLowerCase().includes(q),
     );
-  }, [data, query]);
+  }, [shuffledCombos, query]);
 
   // Reset visible count when query changes
   useEffect(() => {
