@@ -64,6 +64,17 @@ function MiniPal({ pal }: { pal: Pal }) {
   );
 }
 
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl bg-muted/40 p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-bold text-foreground">{value}</div>
+    </div>
+  );
+}
+
 function PalDetails({ pal, data, onClose }: { pal: Pal; data: PalData; onClose: () => void }) {
   const parentPairs = data.breeding[pal.key] ?? [];
   const asParent = useMemo(
