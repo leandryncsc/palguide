@@ -42,7 +42,7 @@ function TypeBadge({ t }: { t: string }) {
 
 function PalCard({ pal, label }: { pal: Pal; label?: string }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.10)] sm:min-w-[120px] sm:flex-none sm:gap-2 sm:p-3">
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.10)] sm:gap-2 sm:p-3 lg:min-w-[120px] lg:flex-none">
       {label && (
         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
