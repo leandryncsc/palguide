@@ -337,7 +337,7 @@ function MapaPage() {
               {CATEGORY_ORDER.map((c) => {
                 const on = active.has(c);
                 const meta = CATEGORY_META[c];
-                const count = MARKERS.filter((m) => m.category === c).length;
+                const count = mapMarkers.filter((m) => m.category === c).length;
                 return (
                   <li key={c}>
                     <button
