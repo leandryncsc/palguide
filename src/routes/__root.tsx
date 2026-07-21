@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Pesquisa Reprodutiva de Palworld — Calculadora de Criação" },
+      { name: "description", content: "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Pesquisa Reprodutiva de Palworld — Calculadora de Criação" },
+      { property: "og:description", content: "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Pesquisa Reprodutiva de Palworld — Calculadora de Criação" },
+      { name: "twitter:description", content: "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/94e41157-f500-49f1-9ece-7a7ba1766c99/id-preview-a94c0165--4352fcd1-40b8-4ca9-96c9-cba7c141aeb3.lovable.app-1784640231602.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/94e41157-f500-49f1-9ece-7a7ba1766c99/id-preview-a94c0165--4352fcd1-40b8-4ca9-96c9-cba7c141aeb3.lovable.app-1784640231602.png" },
     ],
     links: [
       {

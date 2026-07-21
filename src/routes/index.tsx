@@ -18,10 +18,10 @@ export const Route = createFileRoute("/")({
         content:
           "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações.",
       },
-      { property: "og:title", content: "Pesquisa Reprodutiva de Palworld" },
+      { property: "og:title", content: "Pesquisa Reprodutiva de Palworld — Calculadora de Criação" },
       {
         property: "og:description",
-        content: "Calculadora de criação de Palworld em português.",
+        content: "Calculadora de criação (breeding) de Palworld com dados oficiais: escolha dois pais e descubra o filhote, ou navegue por todas as combinações.",
       },
     ],
   }),
