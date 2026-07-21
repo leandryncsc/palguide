@@ -87,9 +87,27 @@ function IvPage() {
         <PalNav />
 
         <section className="rounded-2xl bg-card p-6 shadow-sm">
-          <h1 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Calculadora de Valor Individual (IV)
-          </h1>
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <h1 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Calculadora de Valor Individual (IV)
+            </h1>
+            <button
+              type="button"
+              onClick={() => {
+                setPalKey("");
+                setLevel(50);
+                setHp(0);
+                setAtk(0);
+                setDef(0);
+                setBaseHp(100);
+                setBaseAtk(100);
+                setBaseDef(100);
+              }}
+              className="shrink-0 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition hover:bg-muted"
+            >
+              Limpar
+            </button>
+          </div>
           <p className="mb-6 text-xs text-muted-foreground">
             Informe o Pal, o nível atual e as estatísticas do menu do jogo. A calculadora estima o IV
             (0 a 100) de HP, Ataque e Defesa comparando com a base do Pal.
