@@ -15,6 +15,21 @@ export interface PalType {
   image: string;
 }
 
+export interface WorkSuitability {
+  Kindling: number;
+  Watering: number;
+  Planting: number;
+  GenerateElectricity: number;
+  Handiwork: number;
+  Gathering: number;
+  Lumbering: number;
+  Mining: number;
+  MedicineProduction: number;
+  Cooling: number;
+  Transporting: number;
+  Farming: number;
+}
+
 export interface Pal {
   id: number;
   key: string; // InternalName (stable id used by breeding.json)
@@ -26,6 +41,25 @@ export interface Pal {
   description?: string;
   breedingPower: number;
   variant: boolean;
+  // Rich stats from palcalc
+  rarity: number;
+  size: string;
+  nocturnal: boolean;
+  price: number;
+  minWildLevel: number;
+  maxWildLevel: number;
+  hp: number;
+  attack: number;
+  defense: number;
+  stamina: number;
+  walkSpeed: number;
+  runSpeed: number;
+  rideSprintSpeed: number;
+  transportSpeed: number;
+  maxFullStomach: number;
+  foodAmount: number;
+  craftSpeed: number;
+  workSuitability: WorkSuitability;
 }
 
 export type BreedingMap = Record<string, Array<[string, string]>>;
@@ -49,6 +83,24 @@ interface RawPal {
   LocalizedNames: Record<string, string> | null;
   InternalName: string;
   BreedingPower: number;
+  Rarity: number;
+  Size: string;
+  Nocturnal: boolean;
+  Price: number;
+  MinWildLevel: number;
+  MaxWildLevel: number;
+  Hp: number;
+  Attack: number;
+  Defense: number;
+  Stamina: number;
+  WalkSpeed: number;
+  RunSpeed: number;
+  RideSprintSpeed: number;
+  TransportSpeed: number;
+  MaxFullStomach: number;
+  FoodAmount: number;
+  CraftSpeed: number;
+  WorkSuitability: WorkSuitability;
 }
 
 interface RawBreedingEntry {
@@ -58,7 +110,6 @@ interface RawBreedingEntry {
 }
 
 function iconUrl(displayName: string): string {
-  // palcalc file names use the display name with spaces, e.g. "Azurobe Cryst.png".
   return `${ICON_BASE}/${encodeURIComponent(displayName)}.png`;
 }
 
@@ -93,6 +144,24 @@ export async function fetchPalData(): Promise<PalData> {
       types: [],
       breedingPower: p.BreedingPower,
       variant: p.Id.IsVariant,
+      rarity: p.Rarity,
+      size: p.Size,
+      nocturnal: p.Nocturnal,
+      price: p.Price,
+      minWildLevel: p.MinWildLevel,
+      maxWildLevel: p.MaxWildLevel,
+      hp: p.Hp,
+      attack: p.Attack,
+      defense: p.Defense,
+      stamina: p.Stamina,
+      walkSpeed: p.WalkSpeed,
+      runSpeed: p.RunSpeed,
+      rideSprintSpeed: p.RideSprintSpeed,
+      transportSpeed: p.TransportSpeed,
+      maxFullStomach: p.MaxFullStomach,
+      foodAmount: p.FoodAmount,
+      craftSpeed: p.CraftSpeed,
+      workSuitability: p.WorkSuitability,
     };
   });
 
@@ -162,3 +231,19 @@ const TYPE_PT: Record<string, string> = {
 export function typeLabel(t: string): string {
   return TYPE_PT[t.toLowerCase()] ?? t;
 }
+
+// Labels PT-BR para adaptabilidade ao trabalho
+export const WORK_LABELS: Record<keyof WorkSuitability, string> = {
+  Kindling: "Acender fogueira",
+  Watering: "Rega",
+  Planting: "Plantio",
+  GenerateElectricity: "Geração de energia",
+  Handiwork: "Manual",
+  Gathering: "Coleção",
+  Lumbering: "Registro",
+  Mining: "Mineração",
+  MedicineProduction: "Produtos farmacêuticos",
+  Cooling: "Esfriar",
+  Transporting: "Transporte",
+  Farming: "Pasto",
+};
