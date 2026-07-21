@@ -96,16 +96,16 @@ function PalDetails({ pal, data, onClose }: { pal: Pal; data: PalData; onClose: 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl"
+        className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card p-4 shadow-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-muted ring-2 ring-white/10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted ring-2 ring-white/10 sm:h-24 sm:w-24">
               <img
                 src={pal.image}
                 alt={pal.name}
@@ -113,20 +113,20 @@ function PalDetails({ pal, data, onClose }: { pal: Pal; data: PalData; onClose: 
                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="font-mono text-xs text-muted-foreground">
                 #{String(pal.id).padStart(3, "0")}
                 {pal.variant ? "B" : ""}
               </div>
-              <h2 className="text-2xl font-bold text-foreground">{pal.name}</h2>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <h2 className="truncate text-xl font-bold text-foreground sm:text-2xl">{pal.name}</h2>
+              <div className="mt-1 truncate text-xs text-muted-foreground">
                 Nome interno: <span className="font-mono">{pal.key}</span>
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
+            className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
           >
             Fechar
           </button>
