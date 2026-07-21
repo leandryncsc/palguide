@@ -50,7 +50,7 @@ type Category =
 
 type Marker = {
   id: string;
-  map: MapId;
+  map?: MapId; // default: palpagos
   name: string;
   category: Category;
   level?: number | string;
