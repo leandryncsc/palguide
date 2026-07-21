@@ -9,8 +9,8 @@ const tabs = [
 
 export function PalNav() {
   return (
-    <header className="rounded-2xl bg-card/80 p-5 shadow-sm backdrop-blur">
-      <nav className="flex flex-wrap gap-2 text-sm">
+    <header className="rounded-2xl bg-card/80 p-3 shadow-sm backdrop-blur sm:p-5">
+      <nav className="flex flex-wrap gap-1.5 text-sm sm:gap-2">
         {tabs.map((t) => (
           <Link
             key={t.to}
