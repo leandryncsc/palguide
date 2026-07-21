@@ -42,7 +42,7 @@ function TypeBadge({ t }: { t: string }) {
 
 function PalCard({ pal, label }: { pal: Pal; label?: string }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.10)] sm:min-w-[120px] sm:flex-none sm:gap-2 sm:p-3">
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.10)] sm:gap-2 sm:p-3 lg:min-w-[120px] lg:flex-none">
       {label && (
         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
@@ -287,11 +287,11 @@ function BreedingPage() {
             </section>
 
             <section>
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
                 {filteredCombos.slice(0, visibleCount).map((combo, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-1 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.08)] sm:justify-around sm:gap-2 sm:p-4"
+                    className="flex items-center justify-between gap-1 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.08)] sm:gap-2 sm:p-4 lg:justify-around"
                   >
                     <PalCard pal={combo.parent1} />
                     <div className="shrink-0 text-lg font-light text-muted-foreground sm:text-2xl">+</div>
