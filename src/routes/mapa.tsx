@@ -226,6 +226,77 @@ const CATEGORY_ORDER: Category[] = [
   "npc",
 ];
 
+type SubDef = { key: string; label: string; icon: string; match: (m: Marker) => boolean };
+
+const SUBCATEGORIES: Record<Category, SubDef[]> = {
+  location: [
+    { key: "fast_travel", label: "Fast Travel", icon: "🚩", match: (m) => m.name.startsWith("Fast Travel") },
+    { key: "statue", label: "Estátua de Poder", icon: "🗿", match: (m) => m.name.includes("Santuário") || (m.note ?? "").includes("Estátua") },
+    { key: "base", label: "Ponto Base", icon: "🏕️", match: (m) => m.name.includes("Base") && !m.name.startsWith("Fast Travel") },
+    { key: "warp", label: "Ponto de Warp", icon: "🌀", match: () => false },
+    { key: "respawn", label: "Ponto de Respawn", icon: "♻️", match: () => false },
+    { key: "watchtower", label: "Torre de Vigia", icon: "🔭", match: () => false },
+  ],
+  tower: [
+    { key: "boss_tower", label: "Torre de Chefe", icon: "🗼", match: () => true },
+  ],
+  alpha: [
+    { key: "base_game", label: "Jogo Base", icon: "⚔️", match: (m) => !(m.note ?? "").includes("DLC") },
+    { key: "dlc_sakura", label: "DLC Sakurajima", icon: "🌸", match: (m) => (m.note ?? "").includes("Sakurajima") },
+    { key: "dlc_feybreak", label: "DLC Feybreak", icon: "❄️", match: (m) => (m.note ?? "").includes("Feybreak") },
+    { key: "dlc_worldtree", label: "DLC World Tree", icon: "🌳", match: (m) => m.map === "worldtree" },
+  ],
+  dungeon: [
+    { key: "normal", label: "Dungeon Normal", icon: "🏰", match: () => true },
+    { key: "sealed", label: "Dungeon Selada", icon: "🔒", match: () => false },
+  ],
+  egg: [
+    { key: "common", label: "Comum", icon: "🥚", match: (m) => m.name.includes("Comum") },
+    { key: "hot", label: "Aquecido (Fogo)", icon: "🔥", match: (m) => m.name.includes("Aquecido") },
+    { key: "damp", label: "Molhado (Água)", icon: "💧", match: (m) => m.name.includes("Molhado") },
+    { key: "frozen", label: "Congelado (Gelo)", icon: "❄️", match: (m) => m.name.includes("Congelado") },
+    { key: "verdant", label: "Enraizado (Grama)", icon: "🌿", match: (m) => m.name.includes("Enraizado") },
+    { key: "electric", label: "Elétrico", icon: "⚡", match: (m) => m.name.includes("Elétrico") },
+    { key: "dark", label: "Sombrio", icon: "🌑", match: (m) => m.name.includes("Sombrio") },
+    { key: "rocky", label: "Rochoso (Terra)", icon: "🪨", match: (m) => m.name.includes("Rochoso") },
+    { key: "dragon", label: "Dragônico", icon: "🐉", match: (m) => m.name.includes("Dragônico") },
+  ],
+  resource: [
+    { key: "iron", label: "Ferro", icon: "⛓️", match: (m) => m.name.includes("Ferro") },
+    { key: "coal", label: "Carvão", icon: "🪨", match: (m) => m.name.includes("Carvão") },
+    { key: "sulfur", label: "Enxofre", icon: "🧪", match: (m) => m.name.includes("Enxofre") },
+    { key: "quartz", label: "Quartzo", icon: "💎", match: (m) => m.name.includes("Quartzo") },
+    { key: "fluid", label: "Fluido", icon: "🫧", match: (m) => m.name.includes("Fluido") },
+    { key: "aluminum", label: "Alumínio", icon: "🥈", match: (m) => m.name.includes("Alumínio") },
+    { key: "silver", label: "Prata", icon: "🪙", match: (m) => m.name.includes("Prata") },
+    { key: "oil", label: "Petróleo", icon: "🛢️", match: (m) => m.name.includes("Petróleo") },
+    { key: "obsidian", label: "Obsidiana", icon: "🖤", match: (m) => m.name.includes("Obsidiana") },
+    { key: "crystal", label: "Cristal", icon: "🔷", match: (m) => m.name.includes("Cristal") },
+    { key: "sand", label: "Areia Dourada", icon: "🏜️", match: (m) => m.name.includes("Areia") },
+    { key: "shard", label: "Fragmento", icon: "✨", match: (m) => m.name.includes("Fragmento") && !m.name.includes("Fluido") },
+    { key: "sap", label: "Seiva do Mundo", icon: "🌳", match: (m) => m.name.includes("Seiva") },
+  ],
+  fishing: [
+    { key: "spot", label: "Ponto de Pesca", icon: "🎣", match: () => true },
+  ],
+  npc: [
+    { key: "merchant", label: "Comerciante", icon: "🧑‍💼", match: (m) => m.name.includes("Comerciante") && !m.name.includes("Negro") },
+    { key: "pal_merchant", label: "Mercador de Pals", icon: "🧑‍🌾", match: (m) => m.name.includes("Mercador de Pals") },
+    { key: "medic", label: "Médico Ambulante", icon: "⚕️", match: (m) => m.name.includes("Médico") },
+    { key: "black_market", label: "Mercado Negro", icon: "🕶️", match: (m) => m.name.includes("Negro") },
+    { key: "cavalry", label: "Mestre de Cavalaria", icon: "🐴", match: (m) => m.name.includes("Cavalaria") },
+    { key: "smith", label: "Ferreiro", icon: "🔨", match: (m) => m.name.includes("Ferreiro") },
+    { key: "guardian", label: "Guardião", icon: "🛡️", match: (m) => m.name.includes("Guardiã") || m.name.includes("Guardião") },
+  ],
+};
+
+function subKeyOf(m: Marker): string | null {
+  const subs = SUBCATEGORIES[m.category];
+  for (const s of subs) if (s.match(m)) return s.key;
+  return null;
+}
+
+
 function MapaPage() {
   const [currentMap, setCurrentMap] = useState<MapId>("palpagos");
   const [query, setQuery] = useState("");
@@ -237,17 +308,26 @@ function MapaPage() {
     [currentMap],
   );
 
+  // Subcategories deselected per category (empty set = all subs active)
+  const [excludedSubs, setExcludedSubs] = useState<Record<Category, Set<string>>>(
+    () => Object.fromEntries(CATEGORY_ORDER.map((c) => [c, new Set<string>()])) as Record<Category, Set<string>>,
+  );
+  const [expanded, setExpanded] = useState<Set<Category>>(new Set(["location"]));
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return mapMarkers.filter(
-      (m) =>
-        active.has(m.category) &&
-        (q === "" ||
-          m.name.toLowerCase().includes(q) ||
-          m.coord.toLowerCase().includes(q) ||
-          (m.note ?? "").toLowerCase().includes(q)),
-    );
-  }, [query, active, mapMarkers]);
+    return mapMarkers.filter((m) => {
+      if (!active.has(m.category)) return false;
+      const sub = subKeyOf(m);
+      if (sub && excludedSubs[m.category].has(sub)) return false;
+      if (q === "") return true;
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.coord.toLowerCase().includes(q) ||
+        (m.note ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [query, active, excludedSubs, mapMarkers]);
 
   function toggle(c: Category) {
     setActive((prev) => {
@@ -258,6 +338,31 @@ function MapaPage() {
     });
   }
 
+  function toggleExpanded(c: Category) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }
+
+  function toggleSub(c: Category, sub: string) {
+    setExcludedSubs((prev) => {
+      const next = { ...prev, [c]: new Set(prev[c]) };
+      if (next[c].has(sub)) next[c].delete(sub);
+      else next[c].add(sub);
+      return next;
+    });
+  }
+
+  function setAllSubs(c: Category, on: boolean) {
+    setExcludedSubs((prev) => {
+      const allKeys = SUBCATEGORIES[c].map((s) => s.key);
+      return { ...prev, [c]: on ? new Set() : new Set(allKeys) };
+    });
+  }
+
   function setAll(on: boolean) {
     setActive(on ? new Set(CATEGORY_ORDER) : new Set());
   }
@@ -265,6 +370,7 @@ function MapaPage() {
   const selectedMarker = mapMarkers.find((m) => m.id === selected);
   const totalCount = mapMarkers.length;
   const mapInfo = MAPS[currentMap];
+
 
   return (
     <main className="min-h-screen px-4 py-6">
@@ -337,31 +443,103 @@ function MapaPage() {
               {CATEGORY_ORDER.map((c) => {
                 const on = active.has(c);
                 const meta = CATEGORY_META[c];
-                const count = mapMarkers.filter((m) => m.category === c).length;
+                const catMarkers = mapMarkers.filter((m) => m.category === c);
+                const total = catMarkers.length;
+                const excluded = excludedSubs[c];
+                const activeCount = catMarkers.filter((m) => {
+                  const s = subKeyOf(m);
+                  return !s || !excluded.has(s);
+                }).length;
+                const isOpen = expanded.has(c);
+                const subs = SUBCATEGORIES[c];
+
                 return (
-                  <li key={c}>
-                    <button
-                      onClick={() => toggle(c)}
-                      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        on
-                          ? "border-transparent bg-muted text-foreground"
-                          : "border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <span
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-xs"
-                        style={{ background: on ? meta.color : "transparent", border: on ? "none" : `1px solid ${meta.color}` }}
+                  <li key={c} className="rounded-lg border border-border overflow-hidden">
+                    <div className={`flex items-center gap-2 px-2 py-2 text-sm ${on ? "bg-muted" : ""}`}>
+                      <button
+                        onClick={() => toggle(c)}
+                        aria-label={`Alternar ${meta.label}`}
+                        className="flex items-center gap-2 flex-1 text-left"
                       >
-                        {meta.icon}
-                      </span>
-                      <span className="flex-1 font-medium">{meta.label}</span>
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-xs"
+                          style={{ background: on ? meta.color : "transparent", border: on ? "none" : `1px solid ${meta.color}` }}
+                        >
+                          {meta.icon}
+                        </span>
+                        <span className={`font-medium ${on ? "text-foreground" : "text-muted-foreground"}`}>
+                          {meta.label}
+                        </span>
+                      </button>
                       <span className="font-mono text-[10px] text-muted-foreground">
-                        {on ? count : `0/${count}`}
+                        {on ? `${activeCount}/${total}` : `0/${total}`}
                       </span>
-                    </button>
+                      {subs.length > 1 && (
+                        <button
+                          onClick={() => toggleExpanded(c)}
+                          aria-label={isOpen ? "Recolher" : "Expandir"}
+                          className="text-muted-foreground hover:text-foreground text-xs w-5 text-center"
+                        >
+                          {isOpen ? "▾" : "▸"}
+                        </button>
+                      )}
+                    </div>
+
+                    {isOpen && subs.length > 1 && (
+                      <div className="border-t border-border bg-background/50 p-2">
+                        <div className="mb-1 flex items-center justify-between px-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <span>Subcategorias</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => setAllSubs(c, true)} className="hover:text-foreground">
+                              Todas
+                            </button>
+                            <span className="text-border">·</span>
+                            <button onClick={() => setAllSubs(c, false)} className="hover:text-foreground">
+                              Nenhuma
+                            </button>
+                          </div>
+                        </div>
+                        <ul className="grid grid-cols-1 gap-0.5">
+                          {subs.map((s) => {
+                            const subOn = !excluded.has(s.key);
+                            const subCount = catMarkers.filter((m) => subKeyOf(m) === s.key).length;
+                            const disabled = subCount === 0;
+                            return (
+                              <li key={s.key}>
+                                <button
+                                  onClick={() => toggleSub(c, s.key)}
+                                  disabled={disabled}
+                                  className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs transition ${
+                                    disabled
+                                      ? "text-muted-foreground/40 cursor-not-allowed"
+                                      : subOn
+                                        ? "bg-muted text-foreground"
+                                        : "text-muted-foreground hover:bg-muted/50"
+                                  }`}
+                                >
+                                  <span
+                                    className={`flex h-4 w-4 items-center justify-center rounded border text-[9px] ${
+                                      subOn && !disabled ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                                    }`}
+                                  >
+                                    {subOn && !disabled ? "✓" : ""}
+                                  </span>
+                                  <span className="text-[11px]">{s.icon}</span>
+                                  <span className="flex-1 truncate">{s.label}</span>
+                                  <span className="font-mono text-[9px] text-muted-foreground">
+                                    {subCount}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                   </li>
                 );
               })}
+
             </ul>
           </aside>
 
