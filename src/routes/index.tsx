@@ -287,16 +287,16 @@ function BreedingPage() {
             </section>
 
             <section>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                 {filteredCombos.slice(0, visibleCount).map((combo, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-around gap-2 rounded-2xl bg-card p-4 shadow-[0_4px_20px_rgba(80,120,200,0.08)]"
+                    className="flex items-center justify-between gap-1 rounded-2xl bg-card p-2 shadow-[0_4px_20px_rgba(80,120,200,0.08)] sm:justify-around sm:gap-2 sm:p-4"
                   >
                     <PalCard pal={combo.parent1} />
-                    <div className="text-2xl font-light text-muted-foreground">+</div>
+                    <div className="shrink-0 text-lg font-light text-muted-foreground sm:text-2xl">+</div>
                     <PalCard pal={combo.parent2} />
-                    <div className="text-2xl font-light text-muted-foreground">=</div>
+                    <div className="shrink-0 text-lg font-light text-muted-foreground sm:text-2xl">=</div>
                     <PalCard pal={combo.child} />
                   </div>
                 ))}
