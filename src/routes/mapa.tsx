@@ -275,17 +275,41 @@ function MapaPage() {
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
               <h1 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Mapa de Palpagos Island
+                Mapa — {mapInfo.label}
               </h1>
               <p className="mt-1 text-xs text-muted-foreground">
-                Filtre por categoria e clique em um marcador para ver detalhes. Dados curados do mapa de Palworld.
+                {mapInfo.description}
               </p>
             </div>
             <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {filtered.length}/{totalCount} pontos
             </span>
           </div>
+
+          {/* Seletor de mapa */}
+          <div className="mt-4 inline-flex rounded-lg border border-border p-1">
+            {(Object.keys(MAPS) as MapId[]).map((id) => {
+              const on = currentMap === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setCurrentMap(id);
+                    setSelected(null);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                    on
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🗺️ {MAPS[id].label}
+                </button>
+              );
+            })}
+          </div>
         </section>
+
 
         <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
           {/* Sidebar de filtros estilo palworld.th.gl */}
