@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { fetchPalData, type Pal, type PalData } from "@/lib/pals-api";
+import { fetchPalData, type Pal, type PalData, WORK_LABELS } from "@/lib/pals-api";
 import { PalNav } from "@/components/PalNav";
 
 export const Route = createFileRoute("/paldex")({
@@ -64,6 +64,17 @@ function MiniPal({ pal }: { pal: Pal }) {
   );
 }
 
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl bg-muted/40 p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-bold text-foreground">{value}</div>
+    </div>
+  );
+}
+
 function PalDetails({ pal, data, onClose }: { pal: Pal; data: PalData; onClose: () => void }) {
   const parentPairs = data.breeding[pal.key] ?? [];
   const asParent = useMemo(
@@ -112,22 +123,53 @@ function PalDetails({ pal, data, onClose }: { pal: Pal; data: PalData; onClose: 
           </button>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-muted/40 p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Poder de criação
-            </div>
-            <div className="mt-1 text-2xl font-bold text-foreground">{pal.breedingPower}</div>
-          </div>
-          <div className="rounded-xl bg-muted/40 p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Variante
-            </div>
-            <div className="mt-1 text-2xl font-bold text-foreground">
-              {pal.variant ? "Sim" : "Não"}
-            </div>
-          </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard label="Raridade" value={pal.rarity} />
+          <StatCard label="Tamanho" value={pal.size} />
+          <StatCard label="Noturno" value={pal.nocturnal ? "Sim" : "Não"} />
+          <StatCard label="Poder de criação" value={pal.breedingPower} />
+          <StatCard label="Preço" value={pal.price.toLocaleString("pt-BR")} />
+          <StatCard
+            label="Nível selvagem"
+            value={`${pal.minWildLevel} – ${pal.maxWildLevel}`}
+          />
+          <StatCard label="HP" value={pal.hp} />
+          <StatCard label="Ataque" value={pal.attack} />
+          <StatCard label="Defesa" value={pal.defense} />
+          <StatCard label="Estamina" value={pal.stamina} />
+          <StatCard label="Velocidade (correr)" value={pal.runSpeed} />
+          <StatCard label="Velocidade (montaria)" value={pal.rideSprintSpeed} />
+          <StatCard label="Velocidade transporte" value={pal.transportSpeed} />
+          <StatCard label="Ingestão de alimentos" value={pal.foodAmount} />
+          <StatCard label="Estômago cheio" value={pal.maxFullStomach} />
         </div>
+
+        <section className="mt-6">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Adaptabilidade ao trabalho
+          </h3>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+            {(Object.keys(WORK_LABELS) as Array<keyof typeof WORK_LABELS>)
+              .filter((k) => pal.workSuitability[k] > 0)
+              .sort((a, b) => pal.workSuitability[b] - pal.workSuitability[a])
+              .map((k) => (
+                <div
+                  key={k}
+                  className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2"
+                >
+                  <span className="text-sm text-foreground">{WORK_LABELS[k]}</span>
+                  <span className="rounded-md bg-primary/20 px-2 py-0.5 text-xs font-bold text-primary">
+                    Nível {pal.workSuitability[k]}
+                  </span>
+                </div>
+              ))}
+            {Object.values(pal.workSuitability).every((v) => v === 0) && (
+              <p className="col-span-full text-sm text-muted-foreground">
+                Sem aptidões de trabalho.
+              </p>
+            )}
+          </div>
+        </section>
 
         <section className="mt-6">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
