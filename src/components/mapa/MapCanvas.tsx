@@ -135,11 +135,11 @@ export default function MapCanvas({ mapId, markers, selectedId, onSelect }: Prop
         bounds={bounds}
         minZoom={1}
         maxZoom={MAX_NATIVE_ZOOM}
-        zoom={2}
+        zoom={1}
         attributionControl={false}
         zoomControl={true}
-        zoomSnap={0.5}
-        zoomDelta={0.5}
+        zoomSnap={1}
+        zoomDelta={1}
         wheelPxPerZoomLevel={120}
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
@@ -148,7 +148,8 @@ export default function MapCanvas({ mapId, markers, selectedId, onSelect }: Prop
           key={mapId}
           url={TILE_URLS[mapId]}
           tileSize={TILE_SIZE}
-          minZoom={0}
+          minZoom={1}
+          minNativeZoom={3}
           maxNativeZoom={MAX_NATIVE_ZOOM}
           maxZoom={MAX_NATIVE_ZOOM}
           noWrap
