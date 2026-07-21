@@ -126,7 +126,7 @@ function escapeHtml(s: string) {
 }
 
 export default function MapCanvas({ mapId, markers, selectedId, onSelect }: Props) {
-  const bounds = useMemo(() => L.latLngBounds([0, 0], [TILE_SIZE, TILE_SIZE]), []);
+  const bounds = useMemo(() => L.latLngBounds([-TILE_SIZE, 0], [0, TILE_SIZE]), []);
 
   return (
     <div className="h-[70vh] w-full overflow-hidden rounded-2xl bg-black">
