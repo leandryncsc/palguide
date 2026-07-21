@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
 function TypeBadge({ t }: { t: string }) {
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+      className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary-foreground"
       style={{ background: typeColor(t) }}
     >
       {typeLabel(t)}
@@ -41,7 +41,7 @@ function TypeBadge({ t }: { t: string }) {
 
 function PalCard({ pal, label }: { pal: Pal; label?: string }) {
   return (
-    <div className="flex min-w-[120px] flex-col items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_4px_20px_rgba(80,120,200,0.10)]">
+    <div className="flex min-w-[120px] flex-col items-center gap-2 rounded-2xl bg-card p-3 shadow-[0_4px_20px_rgba(80,120,200,0.10)]">
       {label && (
         <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
@@ -100,7 +100,7 @@ function PalSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 rounded-lg border border-input bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+        className="h-11 rounded-lg border border-input bg-card px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       >
         <option value="">Não selecionado</option>
         {sorted.map((p) => (
@@ -184,7 +184,7 @@ function BreedingPage() {
       }}
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <header className="rounded-2xl bg-white/80 p-5 shadow-sm backdrop-blur">
+        <header className="rounded-2xl bg-card/80 p-5 shadow-sm backdrop-blur">
           <nav className="flex flex-wrap gap-2 text-sm">
             {[
               "Mapa Estratégia Pal",
@@ -213,19 +213,19 @@ function BreedingPage() {
         </header>
 
         {isLoading && (
-          <div className="rounded-2xl bg-white p-8 text-center text-sm text-muted-foreground shadow-sm">
+          <div className="rounded-2xl bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
             Carregando dados oficiais de Palworld...
           </div>
         )}
         {error && (
-          <div className="rounded-2xl bg-red-50 p-6 text-sm text-red-700 shadow-sm">
+          <div className="rounded-2xl bg-destructive/10 p-6 text-sm text-destructive shadow-sm">
             Erro ao carregar dados. Verifique sua conexão e recarregue a página.
           </div>
         )}
 
         {data && (
           <>
-            <section className="rounded-2xl bg-white p-5 shadow-sm">
+            <section className="rounded-2xl bg-card p-5 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-end">
                 <PalSelect value={a} onChange={setA} label="Criando um" pals={data.pals} />
                 <PalSelect value={b} onChange={setB} label="Criação II" pals={data.pals} />
@@ -245,7 +245,7 @@ function BreedingPage() {
                   <button
                     onClick={() => a && b && setConfirmed({ a, b })}
                     disabled={!a || !b}
-                    className="h-11 rounded-lg px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40"
+                    className="h-11 rounded-lg px-5 text-sm font-semibold text-secondary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-40"
                     style={{ background: "oklch(0.6 0.2 250)" }}
                   >
                     Confirmar
@@ -256,7 +256,7 @@ function BreedingPage() {
                       setB("");
                       setConfirmed(null);
                     }}
-                    className="h-11 rounded-lg bg-neutral-800 px-5 text-sm font-semibold text-white transition hover:bg-neutral-700"
+                    className="h-11 rounded-lg bg-secondary px-5 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
                   >
                     Redefinir
                   </button>
@@ -265,7 +265,7 @@ function BreedingPage() {
             </section>
 
             {result && (
-              <section className="rounded-2xl bg-white p-6 shadow-sm">
+              <section className="rounded-2xl bg-card p-6 shadow-sm">
                 <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   Resultado da criação
                 </h2>
@@ -287,7 +287,7 @@ function BreedingPage() {
               </section>
             )}
 
-            <section className="rounded-2xl bg-white p-5 shadow-sm">
+            <section className="rounded-2xl bg-card p-5 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -302,7 +302,7 @@ function BreedingPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Filtrar por nome (pai ou filhote)..."
-                  className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-72"
+                  className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-72"
                 />
               </div>
             </section>
@@ -312,7 +312,7 @@ function BreedingPage() {
                 {filteredCombos.slice(0, visibleCount).map((combo, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-around gap-2 rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgba(80,120,200,0.08)]"
+                    className="flex items-center justify-around gap-2 rounded-2xl bg-card p-4 shadow-[0_4px_20px_rgba(80,120,200,0.08)]"
                   >
                     <PalCard pal={combo.parent1} />
                     <div className="text-2xl font-light text-muted-foreground">+</div>
@@ -331,7 +331,7 @@ function BreedingPage() {
                 </div>
               )}
               {filteredCombos.length === 0 && (
-                <div className="rounded-2xl bg-white p-8 text-center text-sm text-muted-foreground shadow-sm">
+                <div className="rounded-2xl bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
                   Nenhuma combinação encontrada para "{query}".
                 </div>
               )}
