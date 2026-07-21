@@ -8,6 +8,7 @@ import {
   typeLabel,
   type Pal,
 } from "@/lib/pals-api";
+import { PalNav } from "@/components/PalNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
