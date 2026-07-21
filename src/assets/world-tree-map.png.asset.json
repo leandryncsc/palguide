@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "a47d36cf-e94c-4a0e-a886-ffacef7771b2",
+  "asset_id": "260de24d-a047-4d9e-bf65-10c2bff63078",
   "project_id": "4352fcd1-40b8-4ca9-96c9-cba7c141aeb3",
-  "url": "/__l5e/assets-v1/a47d36cf-e94c-4a0e-a886-ffacef7771b2/world-tree-map.png",
-  "r2_key": "a/v1/4352fcd1-40b8-4ca9-96c9-cba7c141aeb3/a47d36cf-e94c-4a0e-a886-ffacef7771b2/world-tree-map.png",
-  "original_filename": "world-tree-map.png",
-  "size": 691838,
+  "url": "/__l5e/assets-v1/260de24d-a047-4d9e-bf65-10c2bff63078/world-tree-map-v2.png",
+  "r2_key": "a/v1/4352fcd1-40b8-4ca9-96c9-cba7c141aeb3/260de24d-a047-4d9e-bf65-10c2bff63078/world-tree-map-v2.png",
+  "original_filename": "world-tree-map-v2.png",
+  "size": 662354,
   "content_type": "image/png",
-  "created_at": "2026-07-21T19:58:14Z"
+  "created_at": "2026-07-21T20:48:07Z"
 }
