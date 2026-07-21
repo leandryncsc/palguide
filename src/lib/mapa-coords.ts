@@ -2,8 +2,9 @@
 //
 // th.gl's map is a slippy tile pyramid at zoom 0..4 with 512px tiles.
 // At z=0 the whole map is a single 512×512 tile.
-// CRS.Simple treats [lat, lng] as [pixelY_from_top, pixelX_from_left].
-// So world (x, y) → latlng ((1 - ny) * 512, nx * 512) where ny/nx ∈ [0,1].
+// IMPORTANT: the CDN path stores tile coordinates as /row/column, while
+// Leaflet requests /column/row. TILE_URLS intentionally swaps {x}/{y}.
+// CRS.Simple uses lng as pixel X and -lat as pixel Y.
 
 import L from "leaflet";
 
@@ -27,9 +28,9 @@ export const MAP_BOUNDS: Record<"palpagos" | "worldtree", MapBounds> = {
 
 export const TILE_URLS: Record<"palpagos" | "worldtree", string> = {
   palpagos:
-    "https://cdn.th.gl/palworld/map-tiles/default-733001e0986faa3f88b0a970412d7fb9/{z}/{x}/{y}.webp?v=1",
+    "https://cdn.th.gl/palworld/map-tiles/default-733001e0986faa3f88b0a970412d7fb9/{z}/{y}/{x}.webp?v=1",
   worldtree:
-    "https://cdn.th.gl/palworld/map-tiles/tree-bd046c3cfb06ee41b25a111f912d407f/{z}/{x}/{y}.webp?v=1",
+    "https://cdn.th.gl/palworld/map-tiles/tree-bd046c3cfb06ee41b25a111f912d407f/{z}/{y}/{x}.webp?v=1",
 };
 
 export function worldToLatLng(
