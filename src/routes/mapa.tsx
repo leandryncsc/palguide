@@ -33,7 +33,7 @@ const MAPS: Record<MapId, { label: string; image: string; description: string }>
   },
   worldtree: {
     label: "The World Tree",
-    image: worldTreeMap,
+    image: worldTreeMap.url,
     description: "Mapa da DLC Tides of Terraria — bioma central com a Árvore do Mundo.",
   },
 };
