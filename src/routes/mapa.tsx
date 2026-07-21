@@ -14,11 +14,7 @@ import {
   Pickaxe,
   Fish,
   User,
-  UserCog,
-  Stethoscope,
   Sparkles,
-  Hammer,
-  ShieldCheck,
   Skull,
   Search,
   X,
@@ -34,10 +30,18 @@ import {
   Zap,
   Moon,
   Mountain,
+  Circle,
+  MapPin,
+  ShieldAlert,
+  TreePine,
+  Anchor,
+  BookOpen,
+  Trees,
 } from "lucide-react";
 import { PalNav } from "@/components/PalNav";
-import worldTreeMap from "@/assets/world-tree-map.png.asset.json";
 import type { CanvasMarker } from "@/components/mapa/MapCanvas";
+import { CATEGORIES, classify, labelForType, type CategoryKey } from "@/lib/mapa-taxonomy";
+import { worldToGameCoord } from "@/lib/mapa-coords";
 
 const MapCanvas = lazy(() => import("@/components/mapa/MapCanvas"));
 
@@ -48,12 +52,13 @@ export const Route = createFileRoute("/mapa")({
       {
         name: "description",
         content:
-          "Mapas interativos de Palpagos Island e The World Tree com filtros hierárquicos por categoria (Locais, Alpha, Torres, Ovos, Recursos, Pesca, NPCs) no estilo palworld.th.gl.",
+          "Mapas interativos de Palpagos Island e The World Tree com dataset completo (73k+ pontos): Fast Travel, Torres, Alphas, Ovos, Recursos, Pesca, NPCs, Tesouros e Coletáveis.",
       },
       { property: "og:title", content: "Mapas Interativos de Palworld" },
       {
         property: "og:description",
-        content: "Zoom, pan e filtros por categoria em Palpagos Island e The World Tree.",
+        content:
+          "Dataset completo de spawns — 70k+ pinos com filtros hierárquicos e clustering.",
       },
     ],
   }),
@@ -62,326 +67,97 @@ export const Route = createFileRoute("/mapa")({
 
 type MapId = "palpagos" | "worldtree";
 
-const MAPS: Record<MapId, { label: string; image: string }> = {
-  palpagos: {
-    label: "Palpagos Island",
-    image: "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Map.jpeg",
-  },
-  worldtree: {
-    label: "The World Tree",
-    image: worldTreeMap.url,
-  },
+const MAPS: Record<MapId, { label: string }> = {
+  palpagos: { label: "Palpagos Island" },
+  worldtree: { label: "The World Tree" },
 };
 
-type CategoryKey =
-  | "locations"
-  | "collectibles"
-  | "items"
-  | "pickups"
-  | "treasures"
-  | "fishing"
-  | "eggs"
-  | "resources"
-  | "pals"
-  | "npcs";
+type RawNode = {
+  id?: string;
+  type: string;
+  p: [number, number, number];
+};
 
 type MarkerData = {
   id: string;
   map: MapId;
   name: string;
   category: CategoryKey;
-  sub: string;
-  level?: number | string;
+  sub: string; // = original type string
   coord: string;
-  x: number;
-  y: number;
-  note?: string;
+  worldX: number;
+  worldY: number;
 };
 
-type SubDef = {
-  key: string;
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+// -------- icon picking per type (small heuristic set) --------
+const IconFor = (type: string): React.ComponentType<{ size?: number; className?: string }> => {
+  if (type === "fasttravel") return Diamond;
+  if (type === "goddess_statue") return Landmark;
+  if (type === "respawn_point") return Compass;
+  if (type === "warp_point") return RotateCcw;
+  if (type === "watchtower") return Eye;
+  if (type === "enemy_camp") return Tent;
+  if (type === "hackable_tower" || type === "boss_tower") return Castle;
+  if (type === "dimensional_rift") return Sparkles;
+  if (type.startsWith("dungeon_")) return DoorOpen;
+  if (type === "drillgame") return Anchor;
+
+  if (type.startsWith("egg_")) return EggIcon;
+
+  if (type === "iron" || type === "copper" || type === "coal") return Pickaxe;
+  if (type === "sulfur") return Flame;
+  if (type === "quartz" || type === "chromium" || type === "rainbowCrystal") return Gem;
+  if (type === "crude_oil") return Droplet;
+  if (type === "paldiumOre") return Gem;
+
+  if (type.startsWith("fishing_spot") || type.startsWith("magnet_fishing_spot")) return Fish;
+
+  if (type.startsWith("treasure_")) return Coins;
+  if (type === "grass_treasure") return Leaf;
+  if (type === "junk_yard") return Package;
+  if (type === "treasure_map") return BookOpen;
+
+  if (type === "lifmunk_effigy") return Sparkles;
+  if (type.startsWith("effigy_")) return Sparkles;
+  if (type === "note") return BookOpen;
+
+  if (type === "wood") return TreePine;
+  if (type === "stone_pickup") return Mountain;
+  if (type === "red_berry") return Leaf;
+  if (type === "mushroom" || type === "cave_mushroom") return Trees;
+  if (type === "kinship_peach" || type === "skill_fruit" || type === "poppy") return Leaf;
+  if (type === "nightStone") return Moon;
+  if (type === "icicle_piece" || type === "windchimes_ice") return Snowflake;
+  if (type === "windchimes") return Zap;
+
+  if (type.startsWith("npc_")) return User;
+
+  if (type.startsWith("boss_")) return Skull;
+  if (type.startsWith("predator_")) return ShieldAlert;
+
+  return Circle;
 };
 
-const CATEGORIES: {
-  key: CategoryKey;
-  label: string;
-  color: string;
-  subs: SubDef[];
-}[] = [
-  {
-    key: "locations",
-    label: "Locations",
-    color: "#38bdf8",
-    subs: [
-      { key: "fast_travel", label: "Fast Travel", icon: Diamond },
-      { key: "statue", label: "Estátua de Poder", icon: Landmark },
-      { key: "base", label: "Ponto Base", icon: Tent },
-      { key: "warp", label: "Ponto de Warp", icon: RotateCcw },
-      { key: "respawn", label: "Ponto de Respawn", icon: Compass },
-      { key: "watchtower", label: "Torre de Vigia", icon: Eye },
-    ],
-  },
-  {
-    key: "collectibles",
-    label: "Collectibles",
-    color: "#a855f7",
-    subs: [{ key: "note", label: "Nota / Memória", icon: Package }],
-  },
-  {
-    key: "items",
-    label: "Items",
-    color: "#f59e0b",
-    subs: [{ key: "chest", label: "Baú de Item", icon: Package }],
-  },
-  {
-    key: "pickups",
-    label: "Pickups",
-    color: "#22c55e",
-    subs: [{ key: "gather", label: "Ponto de Coleta", icon: Leaf }],
-  },
-  {
-    key: "treasures",
-    label: "Treasures",
-    color: "#eab308",
-    subs: [{ key: "treasure", label: "Tesouro", icon: Coins }],
-  },
-  {
-    key: "fishing",
-    label: "Fishing",
-    color: "#06b6d4",
-    subs: [{ key: "spot", label: "Ponto de Pesca", icon: Fish }],
-  },
-  {
-    key: "eggs",
-    label: "Eggs",
-    color: "#facc15",
-    subs: [
-      { key: "common", label: "Comum", icon: EggIcon },
-      { key: "hot", label: "Aquecido (Fogo)", icon: Flame },
-      { key: "damp", label: "Molhado (Água)", icon: Droplet },
-      { key: "frozen", label: "Congelado (Gelo)", icon: Snowflake },
-      { key: "verdant", label: "Enraizado (Grama)", icon: Leaf },
-      { key: "electric", label: "Elétrico", icon: Zap },
-      { key: "dark", label: "Sombrio", icon: Moon },
-      { key: "rocky", label: "Rochoso (Terra)", icon: Mountain },
-      { key: "dragon", label: "Dragônico", icon: Sparkles },
-    ],
-  },
-  {
-    key: "resources",
-    label: "Resources",
-    color: "#f97316",
-    subs: [
-      { key: "iron", label: "Ferro", icon: Pickaxe },
-      { key: "coal", label: "Carvão", icon: Mountain },
-      { key: "sulfur", label: "Enxofre", icon: Flame },
-      { key: "quartz", label: "Quartzo", icon: Gem },
-      { key: "fluid", label: "Fluido", icon: Droplet },
-      { key: "aluminum", label: "Alumínio", icon: Gem },
-      { key: "silver", label: "Prata", icon: Coins },
-      { key: "oil", label: "Petróleo", icon: Droplet },
-      { key: "obsidian", label: "Obsidiana", icon: Mountain },
-      { key: "crystal", label: "Cristal", icon: Gem },
-      { key: "sand", label: "Areia Dourada", icon: Mountain },
-      { key: "sap", label: "Seiva do Mundo", icon: Leaf },
-    ],
-  },
-  {
-    key: "pals",
-    label: "Pals",
-    color: "#ef4444",
-    subs: [
-      { key: "alpha", label: "Alpha Pal", icon: Sword },
-      { key: "tower_boss", label: "Chefe de Torre", icon: Castle },
-      { key: "dungeon_boss", label: "Chefe de Dungeon", icon: DoorOpen },
-      { key: "world_boss", label: "Chefe Mundial", icon: Skull },
-    ],
-  },
-  {
-    key: "npcs",
-    label: "NPCs",
-    color: "#ec4899",
-    subs: [
-      { key: "merchant", label: "Comerciante", icon: User },
-      { key: "pal_merchant", label: "Mercador de Pals", icon: UserCog },
-      { key: "medic", label: "Médico Ambulante", icon: Stethoscope },
-      { key: "black_market", label: "Mercado Negro", icon: Skull },
-      { key: "cavalry", label: "Mestre de Cavalaria", icon: Sword },
-      { key: "smith", label: "Ferreiro", icon: Hammer },
-      { key: "guardian", label: "Guardião", icon: ShieldCheck },
-    ],
-  },
+const PRESETS_KEY = "palguide.mapa.presets";
+const DEFAULT_HIDDEN_CATEGORIES: CategoryKey[] = [
+  // Off-by-default heavy layers, matching th.gl behavior.
+  "pals",
+  "npcs",
+  "pickups",
+  "resources",
+  "fishing",
+  "eggs",
+  "treasures",
+  "collectibles",
+  "misc",
 ];
 
-const MARKERS: MarkerData[] = [
-  // ============ PALPAGOS ISLAND ============
-  // Locations - Fast Travel
-  { id: "p_ft_1", map: "palpagos", name: "Praia Inicial", category: "locations", sub: "fast_travel", coord: "(115, -530)", x: 49, y: 66 },
-  { id: "p_ft_2", map: "palpagos", name: "Planalto Ventoso", category: "locations", sub: "fast_travel", coord: "(75, -350)", x: 47, y: 59 },
-  { id: "p_ft_3", map: "palpagos", name: "Duneshelter", category: "locations", sub: "fast_travel", coord: "(-380, -520)", x: 34, y: 66 },
-  { id: "p_ft_4", map: "palpagos", name: "Ilha Congelada", category: "locations", sub: "fast_travel", coord: "(-150, 430)", x: 43, y: 27 },
-  { id: "p_ft_5", map: "palpagos", name: "Ilha Vulcânica", category: "locations", sub: "fast_travel", coord: "(560, -450)", x: 68, y: 64 },
-  { id: "p_ft_6", map: "palpagos", name: "Sakurajima", category: "locations", sub: "fast_travel", coord: "(-780, 40)", x: 18, y: 46 },
-  { id: "p_ft_7", map: "palpagos", name: "Feybreak", category: "locations", sub: "fast_travel", coord: "(-1200, -300)", x: 8, y: 58 },
-  // Locations - Statue
-  { id: "p_st_1", map: "palpagos", name: "Santuário Nº 1", category: "locations", sub: "statue", coord: "(184, -350)", x: 51, y: 59 },
-  { id: "p_st_2", map: "palpagos", name: "Santuário Nº 2", category: "locations", sub: "statue", coord: "(-95, -200)", x: 45, y: 53 },
-  { id: "p_st_3", map: "palpagos", name: "Santuário Nº 3", category: "locations", sub: "statue", coord: "(340, 200)", x: 59, y: 35 },
-  { id: "p_st_4", map: "palpagos", name: "Santuário Nº 4", category: "locations", sub: "statue", coord: "(-420, 150)", x: 33, y: 41 },
-  // Pals - Tower Bosses
-  { id: "p_tb_1", map: "palpagos", name: "Zoe & Grizzbolt", category: "pals", sub: "tower_boss", level: 15, coord: "(115, -401)", x: 49, y: 60 },
-  { id: "p_tb_2", map: "palpagos", name: "Axel & Orserk", category: "pals", sub: "tower_boss", level: 30, coord: "(-587, -347)", x: 26, y: 58 },
-  { id: "p_tb_3", map: "palpagos", name: "Lily & Lyleen", category: "pals", sub: "tower_boss", level: 40, coord: "(365, 340)", x: 60, y: 30 },
-  { id: "p_tb_4", map: "palpagos", name: "Marcus & Faleris", category: "pals", sub: "tower_boss", level: 45, coord: "(-129, 412)", x: 44, y: 27 },
-  { id: "p_tb_5", map: "palpagos", name: "Victor & Shadowbeak", category: "pals", sub: "tower_boss", level: 50, coord: "(568, -518)", x: 68, y: 66 },
-  { id: "p_tb_6", map: "palpagos", name: "Saya & Selyne", category: "pals", sub: "tower_boss", level: 55, coord: "(-773, 51)", x: 18, y: 45, note: "DLC Sakurajima" },
-  { id: "p_tb_7", map: "palpagos", name: "Bjorn & Bastigor", category: "pals", sub: "tower_boss", level: 60, coord: "(-1300, -400)", x: 6, y: 60, note: "DLC Feybreak" },
-  // Pals - Alphas
-  { id: "p_a_1", map: "palpagos", name: "Alpha Mammorest", category: "pals", sub: "alpha", level: 22, coord: "(178, -35)", x: 51, y: 47 },
-  { id: "p_a_2", map: "palpagos", name: "Alpha Chillet", category: "pals", sub: "alpha", level: 12, coord: "(74, -483)", x: 47, y: 65 },
-  { id: "p_a_3", map: "palpagos", name: "Alpha Anubis", category: "pals", sub: "alpha", level: 47, coord: "(-133, -100)", x: 44, y: 50 },
-  { id: "p_a_4", map: "palpagos", name: "Alpha Jormuntide", category: "pals", sub: "alpha", level: 45, coord: "(542, -83)", x: 66, y: 51 },
-  { id: "p_a_5", map: "palpagos", name: "Alpha Suzaku", category: "pals", sub: "alpha", level: 42, coord: "(650, -477)", x: 71, y: 64 },
-  { id: "p_a_6", map: "palpagos", name: "Alpha Blazamut", category: "pals", sub: "alpha", level: 49, coord: "(552, -420)", x: 68, y: 63 },
-  { id: "p_a_7", map: "palpagos", name: "Alpha Frostallion", category: "pals", sub: "alpha", level: 50, coord: "(-296, 526)", x: 38, y: 22 },
-  { id: "p_a_8", map: "palpagos", name: "Alpha Necromus", category: "pals", sub: "alpha", level: 50, coord: "(384, 508)", x: 61, y: 23 },
-  { id: "p_a_9", map: "palpagos", name: "Alpha Paladius", category: "pals", sub: "alpha", level: 50, coord: "(-360, 507)", x: 36, y: 23 },
-  { id: "p_a_10", map: "palpagos", name: "Alpha Menasting", category: "pals", sub: "alpha", level: 38, coord: "(423, -463)", x: 62, y: 64 },
-  { id: "p_a_11", map: "palpagos", name: "Alpha Bushi", category: "pals", sub: "alpha", level: 24, coord: "(-64, -336)", x: 46, y: 58 },
-  { id: "p_a_12", map: "palpagos", name: "Alpha Broncherry", category: "pals", sub: "alpha", level: 25, coord: "(-84, -186)", x: 46, y: 53 },
-  { id: "p_a_13", map: "palpagos", name: "Alpha Elphidran", category: "pals", sub: "alpha", level: 30, coord: "(345, -196)", x: 59, y: 53 },
-  { id: "p_a_14", map: "palpagos", name: "Alpha Wumpo", category: "pals", sub: "alpha", level: 37, coord: "(-231, 366)", x: 40, y: 30 },
-  { id: "p_a_15", map: "palpagos", name: "Alpha Reptyro", category: "pals", sub: "alpha", level: 42, coord: "(482, -365)", x: 64, y: 61 },
-  { id: "p_a_16", map: "palpagos", name: "Alpha Kingpaca", category: "pals", sub: "alpha", level: 26, coord: "(-121, -235)", x: 44, y: 54 },
-  { id: "p_a_17", map: "palpagos", name: "Alpha Kitsun", category: "pals", sub: "alpha", level: 35, coord: "(-406, 176)", x: 33, y: 40 },
-  { id: "p_a_18", map: "palpagos", name: "Alpha Xenolord", category: "pals", sub: "alpha", level: 55, coord: "(-810, 120)", x: 16, y: 42, note: "DLC Sakurajima" },
-  { id: "p_a_19", map: "palpagos", name: "Alpha Bastigor", category: "pals", sub: "alpha", level: 55, coord: "(-1150, -200)", x: 9, y: 55, note: "DLC Feybreak" },
-  { id: "p_a_20", map: "palpagos", name: "Alpha Terizodon", category: "pals", sub: "alpha", level: 55, coord: "(-1230, -350)", x: 7, y: 58, note: "DLC Feybreak" },
-  // Pals - Dungeon Bosses
-  { id: "p_db_1", map: "palpagos", name: "Dungeon Bosque Sábio", category: "pals", sub: "dungeon_boss", level: "15-25", coord: "(-95, -215)", x: 45, y: 53 },
-  { id: "p_db_2", map: "palpagos", name: "Dungeon do Deserto", category: "pals", sub: "dungeon_boss", level: "25-35", coord: "(-560, -300)", x: 27, y: 57 },
-  { id: "p_db_3", map: "palpagos", name: "Dungeon do Gelo", category: "pals", sub: "dungeon_boss", level: "35-45", coord: "(-260, 380)", x: 39, y: 29 },
-  { id: "p_db_4", map: "palpagos", name: "Dungeon Vulcânica", category: "pals", sub: "dungeon_boss", level: "40-50", coord: "(520, -450)", x: 66, y: 64 },
-  { id: "p_db_5", map: "palpagos", name: "Dungeon Sakurajima", category: "pals", sub: "dungeon_boss", level: "45-55", coord: "(-780, 30)", x: 18, y: 46, note: "DLC" },
-  { id: "p_db_6", map: "palpagos", name: "Dungeon Feybreak", category: "pals", sub: "dungeon_boss", level: "50-60", coord: "(-1180, -280)", x: 8, y: 57, note: "DLC" },
-  // Eggs
-  { id: "p_e_1", map: "palpagos", name: "Ovo Comum", category: "eggs", sub: "common", coord: "(120, -410)", x: 49, y: 61 },
-  { id: "p_e_2", map: "palpagos", name: "Ovo Aquecido", category: "eggs", sub: "hot", coord: "(580, -410)", x: 69, y: 62 },
-  { id: "p_e_3", map: "palpagos", name: "Ovo Molhado", category: "eggs", sub: "damp", coord: "(340, -80)", x: 59, y: 51 },
-  { id: "p_e_4", map: "palpagos", name: "Ovo Congelado", category: "eggs", sub: "frozen", coord: "(-260, 380)", x: 39, y: 29 },
-  { id: "p_e_5", map: "palpagos", name: "Ovo Enraizado", category: "eggs", sub: "verdant", coord: "(-120, -215)", x: 44, y: 53 },
-  { id: "p_e_6", map: "palpagos", name: "Ovo Elétrico", category: "eggs", sub: "electric", coord: "(-450, -100)", x: 31, y: 50 },
-  { id: "p_e_7", map: "palpagos", name: "Ovo Sombrio", category: "eggs", sub: "dark", coord: "(384, 508)", x: 61, y: 23 },
-  { id: "p_e_8", map: "palpagos", name: "Ovo Rochoso", category: "eggs", sub: "rocky", coord: "(-560, -350)", x: 27, y: 58 },
-  { id: "p_e_9", map: "palpagos", name: "Ovo Dragônico", category: "eggs", sub: "dragon", coord: "(542, -83)", x: 66, y: 51 },
-  { id: "p_e_10", map: "palpagos", name: "Ovo Comum Grande", category: "eggs", sub: "common", coord: "(60, -300)", x: 47, y: 56 },
-  // Resources
-  { id: "p_r_1", map: "palpagos", name: "Minério de Ferro", category: "resources", sub: "iron", coord: "(-90, -300)", x: 45, y: 56 },
-  { id: "p_r_2", map: "palpagos", name: "Minério de Carvão", category: "resources", sub: "coal", coord: "(-480, -280)", x: 30, y: 56 },
-  { id: "p_r_3", map: "palpagos", name: "Enxofre", category: "resources", sub: "sulfur", coord: "(520, -430)", x: 66, y: 63 },
-  { id: "p_r_4", map: "palpagos", name: "Quartzo Puro", category: "resources", sub: "quartz", coord: "(-280, 300)", x: 39, y: 33 },
-  { id: "p_r_5", map: "palpagos", name: "Fragmento de Fluido", category: "resources", sub: "fluid", coord: "(300, -80)", x: 58, y: 51 },
-  { id: "p_r_6", map: "palpagos", name: "Alumínio Bruto", category: "resources", sub: "aluminum", coord: "(-720, 80)", x: 20, y: 44, note: "DLC Sakurajima" },
-  { id: "p_r_7", map: "palpagos", name: "Minério de Prata", category: "resources", sub: "silver", coord: "(-1120, -200)", x: 10, y: 55, note: "DLC Feybreak" },
-  { id: "p_r_8", map: "palpagos", name: "Petróleo de Alta Qualidade", category: "resources", sub: "oil", coord: "(-1180, -350)", x: 8, y: 58, note: "DLC Feybreak" },
-  // Fishing
-  { id: "p_f_1", map: "palpagos", name: "Pesca — Costa Inicial", category: "fishing", sub: "spot", coord: "(140, -580)", x: 50, y: 69 },
-  { id: "p_f_2", map: "palpagos", name: "Pesca — Lago Central", category: "fishing", sub: "spot", coord: "(180, -60)", x: 51, y: 50 },
-  { id: "p_f_3", map: "palpagos", name: "Pesca — Rio Deserto", category: "fishing", sub: "spot", coord: "(-480, -350)", x: 30, y: 58 },
-  { id: "p_f_4", map: "palpagos", name: "Pesca — Praia Vulcânica", category: "fishing", sub: "spot", coord: "(620, -500)", x: 70, y: 65 },
-  { id: "p_f_5", map: "palpagos", name: "Pesca — Sakurajima", category: "fishing", sub: "spot", coord: "(-820, 20)", x: 16, y: 46, note: "DLC" },
-  // NPCs
-  { id: "p_n_1", map: "palpagos", name: "Comerciante — Small Settlement", category: "npcs", sub: "merchant", coord: "(75, -480)", x: 47, y: 65 },
-  { id: "p_n_2", map: "palpagos", name: "Mercador de Pals — Settlement", category: "npcs", sub: "pal_merchant", coord: "(78, -478)", x: 47, y: 65 },
-  { id: "p_n_3", map: "palpagos", name: "Comerciante Duneshelter", category: "npcs", sub: "merchant", coord: "(-380, -520)", x: 34, y: 66 },
-  { id: "p_n_4", map: "palpagos", name: "Médico Ambulante", category: "npcs", sub: "medic", coord: "(80, -475)", x: 47, y: 65 },
-  { id: "p_n_5", map: "palpagos", name: "Mercado Negro", category: "npcs", sub: "black_market", coord: "(-380, -518)", x: 34, y: 66 },
-  { id: "p_n_6", map: "palpagos", name: "Mestre de Cavalaria — Sakurajima", category: "npcs", sub: "cavalry", coord: "(-780, 60)", x: 18, y: 45, note: "DLC" },
-  { id: "p_n_7", map: "palpagos", name: "Comerciante — Feybreak", category: "npcs", sub: "merchant", coord: "(-1180, -320)", x: 8, y: 58, note: "DLC" },
+type Preset = {
+  name: string;
+  excluded: Record<string, string[]>;
+};
 
-  // ============ THE WORLD TREE ============
-  // Locations - Fast Travel (posicionados sobre os pinos visíveis na arte oficial)
-  { id: "w_ft_1", map: "worldtree", name: "Mirante da Yggdrasil", category: "locations", sub: "fast_travel", coord: "(-620, 480)", x: 18, y: 12 },
-  { id: "w_ft_2", map: "worldtree", name: "Passagem Norte", category: "locations", sub: "fast_travel", coord: "(-80, 520)", x: 48, y: 12 },
-  { id: "w_ft_3", map: "worldtree", name: "Pico Nevado", category: "locations", sub: "fast_travel", coord: "(-380, 400)", x: 30, y: 20 },
-  { id: "w_ft_4", map: "worldtree", name: "Encosta Vulcânica", category: "locations", sub: "fast_travel", coord: "(180, 360)", x: 54, y: 22 },
-  { id: "w_ft_5", map: "worldtree", name: "Cume das Cinzas", category: "locations", sub: "fast_travel", coord: "(420, 500)", x: 68, y: 10 },
-  { id: "w_ft_6", map: "worldtree", name: "Bosque Oriental", category: "locations", sub: "fast_travel", coord: "(520, 240)", x: 73, y: 32 },
-  { id: "w_ft_7", map: "worldtree", name: "Clareira Central", category: "locations", sub: "fast_travel", coord: "(240, 180)", x: 60, y: 35 },
-  { id: "w_ft_8", map: "worldtree", name: "Oásis Dourado", category: "locations", sub: "fast_travel", coord: "(-320, 60)", x: 32, y: 52 },
-  { id: "w_ft_9", map: "worldtree", name: "Deserto Central", category: "locations", sub: "fast_travel", coord: "(-90, 90)", x: 46, y: 48 },
-  { id: "w_ft_10", map: "worldtree", name: "Fronteira Oeste", category: "locations", sub: "fast_travel", coord: "(-650, 20)", x: 18, y: 55 },
-  { id: "w_ft_11", map: "worldtree", name: "Areia do Sul", category: "locations", sub: "fast_travel", coord: "(-550, -140)", x: 22, y: 65 },
-  { id: "w_ft_12", map: "worldtree", name: "Floresta Sombria", category: "locations", sub: "fast_travel", coord: "(-260, -180)", x: 38, y: 68 },
-  { id: "w_ft_13", map: "worldtree", name: "Bosque Oriental Sul", category: "locations", sub: "fast_travel", coord: "(280, -80)", x: 62, y: 55 },
-  { id: "w_ft_14", map: "worldtree", name: "Costa Leste", category: "locations", sub: "fast_travel", coord: "(620, -60)", x: 80, y: 52 },
-  { id: "w_ft_15", map: "worldtree", name: "Posto Avançado Sul", category: "locations", sub: "fast_travel", coord: "(-360, -560)", x: 32, y: 90 },
-  // Statues (Estátuas de Poder)
-  { id: "w_st_1", map: "worldtree", name: "Santuário da Raiz Norte", category: "locations", sub: "statue", coord: "(-80, 320)", x: 48, y: 25 },
-  { id: "w_st_2", map: "worldtree", name: "Santuário do Deserto", category: "locations", sub: "statue", coord: "(-260, 40)", x: 38, y: 54 },
-  { id: "w_st_3", map: "worldtree", name: "Santuário do Bosque", category: "locations", sub: "statue", coord: "(320, 60)", x: 63, y: 45 },
-  { id: "w_st_4", map: "worldtree", name: "Santuário Sombrio", category: "locations", sub: "statue", coord: "(-180, -260)", x: 42, y: 72 },
-  // Torre / Chefe final
-  { id: "w_tb_1", map: "worldtree", name: "Terraria & Yggdrasil (Chefe Final)", category: "pals", sub: "tower_boss", level: 65, coord: "(60, 240)", x: 52, y: 30, note: "Chefe final da DLC" },
-  // Alpha Pals
-  { id: "w_a_1", map: "worldtree", name: "Alpha Yggverbird", category: "pals", sub: "alpha", level: 55, coord: "(-140, 400)", x: 44, y: 20 },
-  { id: "w_a_2", map: "worldtree", name: "Alpha Pyroclast", category: "pals", sub: "alpha", level: 58, coord: "(360, 380)", x: 65, y: 22 },
-  { id: "w_a_3", map: "worldtree", name: "Alpha Aurorion", category: "pals", sub: "alpha", level: 55, coord: "(-460, 380)", x: 26, y: 22 },
-  { id: "w_a_4", map: "worldtree", name: "Alpha Duneling", category: "pals", sub: "alpha", level: 52, coord: "(-320, 100)", x: 32, y: 50 },
-  { id: "w_a_5", map: "worldtree", name: "Alpha Umbrafox", category: "pals", sub: "alpha", level: 56, coord: "(320, -140)", x: 63, y: 65 },
-  { id: "w_a_6", map: "worldtree", name: "Alpha Rootguard", category: "pals", sub: "world_boss", level: 60, coord: "(60, 100)", x: 52, y: 45, note: "Guardião da árvore" },
-  { id: "w_a_7", map: "worldtree", name: "Alpha Cindermaw", category: "pals", sub: "alpha", level: 60, coord: "(480, 220)", x: 72, y: 34 },
-  { id: "w_a_8", map: "worldtree", name: "Alpha Shadeling", category: "pals", sub: "alpha", level: 58, coord: "(-220, -320)", x: 40, y: 76 },
-  // Dungeons
-  { id: "w_db_1", map: "worldtree", name: "Dungeon das Raízes", category: "pals", sub: "dungeon_boss", level: "50-60", coord: "(-40, 200)", x: 49, y: 38 },
-  { id: "w_db_2", map: "worldtree", name: "Dungeon Vulcânica das Cinzas", category: "pals", sub: "dungeon_boss", level: "55-65", coord: "(340, 340)", x: 64, y: 24 },
-  { id: "w_db_3", map: "worldtree", name: "Dungeon do Deserto Antigo", category: "pals", sub: "dungeon_boss", level: "50-60", coord: "(-360, 40)", x: 30, y: 54 },
-  { id: "w_db_4", map: "worldtree", name: "Dungeon Sombria", category: "pals", sub: "dungeon_boss", level: "55-65", coord: "(-160, -240)", x: 43, y: 72 },
-  // Eggs
-  { id: "w_e_1", map: "worldtree", name: "Ovo Enraizado (Grande)", category: "eggs", sub: "verdant", coord: "(20, 220)", x: 51, y: 36 },
-  { id: "w_e_2", map: "worldtree", name: "Ovo Aquecido", category: "eggs", sub: "hot", coord: "(320, 360)", x: 63, y: 23 },
-  { id: "w_e_3", map: "worldtree", name: "Ovo Congelado", category: "eggs", sub: "frozen", coord: "(-360, 420)", x: 30, y: 18 },
-  { id: "w_e_4", map: "worldtree", name: "Ovo Sombrio", category: "eggs", sub: "dark", coord: "(-200, -260)", x: 41, y: 72 },
-  { id: "w_e_5", map: "worldtree", name: "Ovo Rochoso", category: "eggs", sub: "rocky", coord: "(-500, 60)", x: 25, y: 52 },
-  { id: "w_e_6", map: "worldtree", name: "Ovo Dragônico", category: "eggs", sub: "dragon", coord: "(140, 180)", x: 55, y: 38 },
-  { id: "w_e_7", map: "worldtree", name: "Ovo Elétrico", category: "eggs", sub: "electric", coord: "(-80, -80)", x: 47, y: 55 },
-  // Resources
-  { id: "w_r_1", map: "worldtree", name: "Seiva da Árvore do Mundo", category: "resources", sub: "sap", coord: "(0, 200)", x: 50, y: 38 },
-  { id: "w_r_2", map: "worldtree", name: "Obsidiana Vulcânica", category: "resources", sub: "obsidian", coord: "(360, 340)", x: 65, y: 24 },
-  { id: "w_r_3", map: "worldtree", name: "Cristal Congelado", category: "resources", sub: "crystal", coord: "(-320, 460)", x: 32, y: 15 },
-  { id: "w_r_4", map: "worldtree", name: "Areia Dourada", category: "resources", sub: "sand", coord: "(-380, 80)", x: 29, y: 52 },
-  { id: "w_r_5", map: "worldtree", name: "Fragmento Sombrio", category: "resources", sub: "fluid", coord: "(-140, -240)", x: 43, y: 71 },
-  { id: "w_r_6", map: "worldtree", name: "Minério de Ferro", category: "resources", sub: "iron", coord: "(-540, -20)", x: 24, y: 56 },
-  { id: "w_r_7", map: "worldtree", name: "Enxofre", category: "resources", sub: "sulfur", coord: "(440, 300)", x: 70, y: 28 },
-  { id: "w_r_8", map: "worldtree", name: "Carvão", category: "resources", sub: "coal", coord: "(280, -60)", x: 62, y: 54 },
-  // Fishing
-  { id: "w_f_1", map: "worldtree", name: "Pesca — Lago da Árvore", category: "fishing", sub: "spot", coord: "(-40, 20)", x: 48, y: 55 },
-  { id: "w_f_2", map: "worldtree", name: "Pesca — Rio Vulcânico", category: "fishing", sub: "spot", coord: "(400, 220)", x: 68, y: 34 },
-  { id: "w_f_3", map: "worldtree", name: "Pesca — Oásis do Deserto", category: "fishing", sub: "spot", coord: "(-380, 0)", x: 29, y: 57 },
-  { id: "w_f_4", map: "worldtree", name: "Pesca — Costa Leste", category: "fishing", sub: "spot", coord: "(600, -80)", x: 78, y: 54 },
-  // Pickups & Treasures
-  { id: "w_pk_1", map: "worldtree", name: "Coleta — Ervas Raras", category: "pickups", sub: "gather", coord: "(-160, 260)", x: 43, y: 34 },
-  { id: "w_pk_2", map: "worldtree", name: "Coleta — Cogumelos Sombrios", category: "pickups", sub: "gather", coord: "(-220, -180)", x: 41, y: 68 },
-  { id: "w_tr_1", map: "worldtree", name: "Tesouro do Deserto", category: "treasures", sub: "treasure", coord: "(-300, -60)", x: 33, y: 60 },
-  { id: "w_tr_2", map: "worldtree", name: "Tesouro Vulcânico", category: "treasures", sub: "treasure", coord: "(380, 300)", x: 66, y: 28 },
-  { id: "w_it_1", map: "worldtree", name: "Baú Raro — Raízes", category: "items", sub: "chest", coord: "(60, 140)", x: 52, y: 42 },
-  { id: "w_it_2", map: "worldtree", name: "Baú Épico — Cume", category: "items", sub: "chest", coord: "(320, 420)", x: 63, y: 17 },
-  // Collectibles
-  { id: "w_co_1", map: "worldtree", name: "Nota Perdida — Yggdrasil", category: "collectibles", sub: "note", coord: "(20, 300)", x: 51, y: 27 },
-  { id: "w_co_2", map: "worldtree", name: "Memória do Cientista", category: "collectibles", sub: "note", coord: "(-380, -180)", x: 30, y: 68 },
-  // NPCs
-  { id: "w_n_1", map: "worldtree", name: "Guardiã da Árvore", category: "npcs", sub: "guardian", coord: "(10, 40)", x: 50, y: 55 },
-  { id: "w_n_2", map: "worldtree", name: "Comerciante das Raízes", category: "npcs", sub: "merchant", coord: "(-40, -20)", x: 48, y: 59 },
-  { id: "w_n_3", map: "worldtree", name: "Ferreiro Vulcânico", category: "npcs", sub: "smith", coord: "(360, 300)", x: 65, y: 28 },
-  { id: "w_n_4", map: "worldtree", name: "Mercador de Pals — Oásis", category: "npcs", sub: "pal_merchant", coord: "(-340, 40)", x: 31, y: 54 },
-  { id: "w_n_5", map: "worldtree", name: "Médico Ambulante", category: "npcs", sub: "medic", coord: "(-80, 60)", x: 47, y: 52 },
-];
-
-type Preset = { name: string; excluded: Record<string, string[]> };
-const PRESETS_KEY = "palguide:map-presets";
-
+// Cheap client-only hydration guard for the Leaflet component.
 function useHydrated() {
   const [h, setH] = useState(false);
   useEffect(() => setH(true), []);
@@ -391,20 +167,110 @@ function useHydrated() {
 function MapaPage() {
   const hydrated = useHydrated();
   const [currentMap, setCurrentMap] = useState<MapId>("palpagos");
+  const [mapOpen, setMapOpen] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filterQuery, setFilterQuery] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<CategoryKey>>(new Set(["locations"]));
-  const [mapOpen, setMapOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<CategoryKey>>(() => new Set(["locations"]));
 
-  // excluded[categoryKey] = Set of subKeys hidden. Empty set = all subs on.
-  // Whole category hidden = every sub in excluded.
+  // Raw dataset loading
+  const [palpagosData, setPalpagosData] = useState<RawNode[] | null>(null);
+  const [treeData, setTreeData] = useState<RawNode[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [p, t] = await Promise.all([
+          fetch("/data/palpagos.json").then((r) => r.json()),
+          fetch("/data/tree.json").then((r) => r.json()),
+        ]);
+        if (!alive) return;
+        setPalpagosData(p);
+        setTreeData(t);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Build MarkerData once per dataset.
+  const allMarkers: MarkerData[] = useMemo(() => {
+    const out: MarkerData[] = [];
+    const push = (nodes: RawNode[] | null, map: MapId) => {
+      if (!nodes) return;
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        const x = n.p?.[0] ?? 0;
+        const y = n.p?.[1] ?? 0;
+        out.push({
+          id: `${map[0]}_${i}`,
+          map,
+          name: labelForType(n.type),
+          category: classify(n.type),
+          sub: n.type,
+          coord: worldToGameCoord(x, y),
+          worldX: x,
+          worldY: y,
+        });
+      }
+    };
+    push(palpagosData, "palpagos");
+    push(treeData, "worldtree");
+    return out;
+  }, [palpagosData, treeData]);
+
+  // Compute dynamic sub-lists per category, per map, with counts.
+  const subsByCat = useMemo(() => {
+    const out: Record<CategoryKey, { key: string; label: string; count: number }[]> =
+      Object.fromEntries(CATEGORIES.map((c) => [c.key, []])) as Record<
+        CategoryKey,
+        { key: string; label: string; count: number }[]
+      >;
+    const counter = new Map<string, number>();
+    for (const m of allMarkers) {
+      if (m.map !== currentMap) continue;
+      const k = `${m.category}::${m.sub}`;
+      counter.set(k, (counter.get(k) ?? 0) + 1);
+    }
+    for (const [k, count] of counter) {
+      const [catRaw, sub] = k.split("::");
+      const cat = catRaw as CategoryKey;
+      out[cat].push({ key: sub, label: labelForType(sub), count });
+    }
+    for (const arr of Object.values(out)) arr.sort((a, b) => b.count - a.count);
+    return out;
+  }, [allMarkers, currentMap]);
+
+  // excluded[cat] = Set of sub keys that are HIDDEN. Empty = all sub on.
   const [excluded, setExcluded] = useState<Record<CategoryKey, Set<string>>>(() =>
     Object.fromEntries(CATEGORIES.map((c) => [c.key, new Set<string>()])) as Record<
       CategoryKey,
       Set<string>
     >,
   );
+
+  // Apply DEFAULT preset on first data load: hide heavy categories entirely.
+  const [appliedDefault, setAppliedDefault] = useState(false);
+  useEffect(() => {
+    if (appliedDefault || !palpagosData) return;
+    setExcluded(() => {
+      const next = Object.fromEntries(
+        CATEGORIES.map((c) => [c.key, new Set<string>()]),
+      ) as Record<CategoryKey, Set<string>>;
+      for (const c of CATEGORIES) {
+        if (DEFAULT_HIDDEN_CATEGORIES.includes(c.key)) {
+          for (const s of subsByCat[c.key] ?? []) next[c.key].add(s.key);
+        }
+      }
+      return next;
+    });
+    setAppliedDefault(true);
+  }, [palpagosData, subsByCat, appliedDefault]);
 
   const [presets, setPresets] = useState<Preset[]>([]);
   const [presetsOpen, setPresetsOpen] = useState(false);
@@ -427,7 +293,10 @@ function MapaPage() {
     }
   }
 
-  const mapMarkers = useMemo(() => MARKERS.filter((m) => m.map === currentMap), [currentMap]);
+  const mapMarkers = useMemo(
+    () => allMarkers.filter((m) => m.map === currentMap),
+    [allMarkers, currentMap],
+  );
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -437,7 +306,7 @@ function MapaPage() {
       return (
         m.name.toLowerCase().includes(q) ||
         m.coord.toLowerCase().includes(q) ||
-        (m.note ?? "").toLowerCase().includes(q)
+        m.sub.toLowerCase().includes(q)
       );
     });
   }, [mapMarkers, excluded, query]);
@@ -445,21 +314,18 @@ function MapaPage() {
   const canvasMarkers: CanvasMarker[] = useMemo(() => {
     return visible.map((m) => {
       const cat = CATEGORIES.find((c) => c.key === m.category)!;
-      const sub = cat.subs.find((s) => s.key === m.sub);
-      const IconCmp = sub?.icon ?? Diamond;
+      const IconCmp = IconFor(m.sub);
       return {
         id: m.id,
         name: m.name,
         category: cat.key,
         categoryLabel: cat.label,
         categoryColor: cat.color,
-        subLabel: sub?.label,
-        level: m.level,
+        subLabel: labelForType(m.sub),
         coord: m.coord,
-        x: m.x,
-        y: m.y,
-        note: m.note,
-        icon: <IconCmp size={14} />,
+        worldX: m.worldX,
+        worldY: m.worldY,
+        icon: <IconCmp size={12} />,
       };
     });
   }, [visible]);
@@ -474,23 +340,34 @@ function MapaPage() {
   }
 
   function toggleCategoryAll(cat: CategoryKey) {
-    const def = CATEGORIES.find((c) => c.key === cat)!;
-    const isFullyHidden = def.subs.every((s) => excluded[cat].has(s.key));
+    const subs = subsByCat[cat] ?? [];
+    const isFullyHidden = subs.length > 0 && subs.every((s) => excluded[cat].has(s.key));
     setExcluded((prev) => ({
       ...prev,
-      [cat]: isFullyHidden ? new Set() : new Set(def.subs.map((s) => s.key)),
+      [cat]: isFullyHidden ? new Set() : new Set(subs.map((s) => s.key)),
     }));
   }
 
   function setAllCategories(on: boolean) {
     const next = Object.fromEntries(
-      CATEGORIES.map((c) => [c.key, on ? new Set<string>() : new Set(c.subs.map((s) => s.key))]),
+      CATEGORIES.map((c) => [
+        c.key,
+        on ? new Set<string>() : new Set((subsByCat[c.key] ?? []).map((s) => s.key)),
+      ]),
     ) as Record<CategoryKey, Set<string>>;
     setExcluded(next);
   }
 
   function resetDefault() {
-    setAllCategories(true);
+    const next = Object.fromEntries(
+      CATEGORIES.map((c) => [c.key, new Set<string>()]),
+    ) as Record<CategoryKey, Set<string>>;
+    for (const c of CATEGORIES) {
+      if (DEFAULT_HIDDEN_CATEGORIES.includes(c.key)) {
+        for (const s of subsByCat[c.key] ?? []) next[c.key].add(s.key);
+      }
+    }
+    setExcluded(next);
     setQuery("");
     setFilterQuery("");
   }
@@ -538,10 +415,12 @@ function MapaPage() {
 
         <section className="grid gap-3 lg:grid-cols-[300px_1fr]">
           {/* Sidebar */}
-          <aside className="flex flex-col gap-2 rounded-2xl bg-card p-3 shadow-sm">
-            {/* Search */}
+          <aside className="flex max-h-[80vh] flex-col gap-2 overflow-y-auto rounded-2xl bg-card p-3 shadow-sm">
             <div className="relative">
-              <Search size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
               <input
                 type="text"
                 placeholder="Buscar no mapa…"
@@ -551,14 +430,13 @@ function MapaPage() {
               />
             </div>
 
-            {/* Map selector accordion */}
             <div className="rounded-md border border-border">
               <button
                 onClick={() => setMapOpen((o) => !o)}
                 className="flex w-full items-center justify-between gap-2 px-2 py-2 text-left text-xs font-semibold"
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-muted-foreground">🗺️</span>
+                  <MapPin size={12} className="text-muted-foreground" />
                   {MAPS[currentMap].label}
                 </span>
                 <ChevronDown size={14} className={`transition ${mapOpen ? "rotate-180" : ""}`} />
@@ -574,9 +452,7 @@ function MapaPage() {
                         setMapOpen(false);
                       }}
                       className={`block w-full rounded px-2 py-1.5 text-left text-xs ${
-                        currentMap === id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
+                        currentMap === id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                       }`}
                     >
                       {MAPS[id].label}
@@ -586,7 +462,6 @@ function MapaPage() {
               )}
             </div>
 
-            {/* ALL / NONE / DEFAULT / PRESETS */}
             <div className="flex items-center justify-between border-b border-border pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <button onClick={() => setAllCategories(true)} className="hover:text-foreground">
                 ALL
@@ -638,7 +513,6 @@ function MapaPage() {
               </div>
             )}
 
-            {/* Find filter */}
             <div className="relative">
               <input
                 type="text"
@@ -649,24 +523,31 @@ function MapaPage() {
               />
             </div>
 
-            {/* Categories */}
             <ul className="flex flex-col gap-1">
               {CATEGORIES.map((cat) => {
-                const catMarkers = mapMarkers.filter((m) => m.category === cat.key);
-                const totalInCat = catMarkers.length;
-                const activeInCat = catMarkers.filter((m) => !excluded[cat.key].has(m.sub)).length;
-                const isFullyHidden = cat.subs.every((s) => excluded[cat.key].has(s.key));
+                const subs = subsByCat[cat.key] ?? [];
+                const totalInCat = subs.reduce((s, x) => s + x.count, 0);
+                const activeInCat = subs
+                  .filter((s) => !excluded[cat.key].has(s.key))
+                  .reduce((s, x) => s + x.count, 0);
+                const isFullyHidden = subs.length > 0 && subs.every((s) => excluded[cat.key].has(s.key));
                 const isOpen = expanded.has(cat.key);
                 const fq = filterQuery.trim().toLowerCase();
                 const filteredSubs = fq
-                  ? cat.subs.filter(
+                  ? subs.filter(
                       (s) =>
                         s.label.toLowerCase().includes(fq) ||
+                        s.key.toLowerCase().includes(fq) ||
                         cat.label.toLowerCase().includes(fq),
                     )
-                  : cat.subs;
-                if (fq && filteredSubs.length === 0 && !cat.label.toLowerCase().includes(fq))
+                  : subs;
+                if (
+                  fq &&
+                  filteredSubs.length === 0 &&
+                  !cat.label.toLowerCase().includes(fq)
+                )
                   return null;
+                if (subs.length === 0) return null;
 
                 return (
                   <li key={cat.key} className="overflow-hidden rounded-md">
@@ -684,6 +565,10 @@ function MapaPage() {
                           isFullyHidden ? "text-muted-foreground/60" : "text-foreground"
                         }`}
                       >
+                        <span
+                          className="mr-1 inline-block h-2 w-2 rounded-full align-middle"
+                          style={{ background: cat.color }}
+                        />
                         {cat.label}{" "}
                         <span className="ml-1 font-mono text-[10px] font-normal text-muted-foreground">
                           {activeInCat}/{totalInCat}
@@ -698,38 +583,33 @@ function MapaPage() {
                     </div>
 
                     {isOpen && (
-                      <ul className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border pl-2">
+                      <ul className="ml-4 mt-1 flex max-h-64 flex-col gap-0.5 overflow-y-auto border-l border-border pl-2">
                         {filteredSubs.map((s) => {
                           const subOn = !excluded[cat.key].has(s.key);
-                          const subCount = catMarkers.filter((m) => m.sub === s.key).length;
-                          const disabled = subCount === 0;
-                          const IconCmp = s.icon;
+                          const IconCmp = IconFor(s.key);
                           return (
                             <li key={s.key}>
                               <button
                                 onClick={() => toggleSub(cat.key, s.key)}
-                                disabled={disabled}
                                 className={`flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-[11px] transition ${
-                                  disabled
-                                    ? "cursor-not-allowed text-muted-foreground/30"
-                                    : subOn
-                                      ? "text-foreground hover:bg-muted"
-                                      : "text-muted-foreground/50 hover:bg-muted/50"
+                                  subOn
+                                    ? "text-foreground hover:bg-muted"
+                                    : "text-muted-foreground/50 hover:bg-muted/50"
                                 }`}
                               >
                                 <span
                                   className="flex h-4 w-4 items-center justify-center rounded border"
                                   style={{
-                                    borderColor: subOn && !disabled ? cat.color : undefined,
-                                    background: subOn && !disabled ? cat.color : "transparent",
+                                    borderColor: subOn ? cat.color : undefined,
+                                    background: subOn ? cat.color : "transparent",
                                     color: "white",
                                   }}
                                 >
-                                  {subOn && !disabled && <IconCmp size={10} />}
+                                  {subOn && <IconCmp size={10} />}
                                 </span>
                                 <span className="flex-1 truncate">{s.label}</span>
                                 <span className="font-mono text-[9px] text-muted-foreground">
-                                  {subCount}
+                                  {s.count}
                                 </span>
                               </button>
                             </li>
@@ -743,13 +623,13 @@ function MapaPage() {
             </ul>
 
             <div className="mt-2 rounded border border-border bg-background/50 p-2 text-center text-[10px] text-muted-foreground">
-              {totalActive}/{totalMap} pontos visíveis
+              {totalActive.toLocaleString("pt-BR")}/{totalMap.toLocaleString("pt-BR")} pontos
+              visíveis
             </div>
           </aside>
 
-          {/* Map + details */}
           <div className="flex flex-col gap-3">
-            {hydrated ? (
+            {hydrated && !loading ? (
               <Suspense
                 fallback={
                   <div className="flex h-[70vh] items-center justify-center rounded-2xl bg-card text-sm text-muted-foreground">
@@ -758,7 +638,7 @@ function MapaPage() {
                 }
               >
                 <MapCanvas
-                  image={MAPS[currentMap].image}
+                  mapId={currentMap}
                   markers={canvasMarkers}
                   selectedId={selected}
                   onSelect={setSelected}
@@ -766,14 +646,14 @@ function MapaPage() {
               </Suspense>
             ) : (
               <div className="flex h-[70vh] items-center justify-center rounded-2xl bg-card text-sm text-muted-foreground">
-                Carregando mapa…
+                {loading ? "Baixando dataset (70k+ pontos)…" : "Carregando mapa…"}
               </div>
             )}
 
             <div className="rounded-2xl bg-card p-3 text-xs text-muted-foreground shadow-sm">
-              Use scroll para zoom, arraste para navegar. Filtros hierárquicos no estilo{" "}
-              <span className="text-foreground">palworld.th.gl</span>. Clique num pin para ver
-              detalhes e copiar as coordenadas.
+              Dataset completo do <span className="text-foreground">palworld.th.gl</span> — 73k+
+              pontos com clustering automático. Scroll para zoom, arraste para navegar. Filtros
+              hierárquicos com contadores em tempo real.
             </div>
           </div>
         </section>
