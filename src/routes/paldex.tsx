@@ -310,21 +310,25 @@ function PaldexPage() {
             />
           </div>
 
-          <div className="mt-5 space-y-4 border-t border-border pt-4">
-            <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[110px_1fr] sm:gap-3">
-              <span className="pt-1.5 text-sm font-semibold text-foreground">Noturno</span>
+          <div className="mt-5 flex flex-col gap-5 border-t border-border pt-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Noturno
+                </span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {([
-                  ["any", "todos"],
-                  ["no", "não"],
-                  ["yes", "sim"],
+                  ["any", "Todos"],
+                  ["no", "Não"],
+                  ["yes", "Sim"],
                 ] as const).map(([val, label]) => (
                   <button
                     key={val}
                     onClick={() => setNocturnal(val)}
                     className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
                       nocturnal === val
-                        ? "border-primary bg-primary text-primary-foreground"
+                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : "border-border bg-muted/30 text-foreground hover:bg-muted/60"
                     }`}
                   >
@@ -334,10 +338,20 @@ function PaldexPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[110px_1fr] sm:gap-3">
-              <span className="pt-1.5 text-sm font-semibold text-foreground">
-                Adaptabilidade ao trabalho
-              </span>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Adaptabilidade ao trabalho
+                </span>
+                {works.length > 0 && (
+                  <button
+                    onClick={() => setWorks([])}
+                    className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    limpar ({works.length})
+                  </button>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {workKeys.map((k) => {
                   const on = works.includes(k);
@@ -347,7 +361,7 @@ function PaldexPage() {
                       onClick={() => toggleWork(k)}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                         on
-                          ? "border-primary bg-primary text-primary-foreground"
+                          ? "border-primary bg-primary text-primary-foreground shadow-sm"
                           : "border-border bg-muted/30 text-foreground hover:bg-muted/60"
                       }`}
                     >
@@ -358,18 +372,19 @@ function PaldexPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">
+                {activeCount > 0
+                  ? `${activeCount} filtro${activeCount > 1 ? "s" : ""} ativo${activeCount > 1 ? "s" : ""}`
+                  : "Nenhum filtro ativo"}
+              </span>
               <button
                 onClick={reset}
-                className="rounded-lg bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80"
+                disabled={activeCount === 0 && !query}
+                className="rounded-lg bg-secondary px-5 py-1.5 text-xs font-semibold text-secondary-foreground transition hover:bg-secondary/80 disabled:opacity-40"
               >
-                Reiniciar
+                Reiniciar filtros
               </button>
-              {activeCount > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {activeCount} filtro{activeCount > 1 ? "s" : ""} ativo{activeCount > 1 ? "s" : ""}
-                </span>
-              )}
             </div>
           </div>
         </section>
