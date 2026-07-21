@@ -133,11 +133,14 @@ export default function MapCanvas({ mapId, markers, selectedId, onSelect }: Prop
       <MapContainer
         crs={L.CRS.Simple}
         bounds={bounds}
-        minZoom={0}
-        maxZoom={MAX_NATIVE_ZOOM + 2}
+        minZoom={1}
+        maxZoom={MAX_NATIVE_ZOOM}
         zoom={2}
         attributionControl={false}
         zoomControl={true}
+        zoomSnap={0.5}
+        zoomDelta={0.5}
+        wheelPxPerZoomLevel={120}
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
         <FitOnMapChange mapId={mapId} />
@@ -147,9 +150,10 @@ export default function MapCanvas({ mapId, markers, selectedId, onSelect }: Prop
           tileSize={TILE_SIZE}
           minZoom={0}
           maxNativeZoom={MAX_NATIVE_ZOOM}
-          maxZoom={MAX_NATIVE_ZOOM + 2}
+          maxZoom={MAX_NATIVE_ZOOM}
           noWrap
           bounds={bounds}
+          keepBuffer={4}
         />
         <ClusterLayer mapId={mapId} markers={markers} selectedId={selectedId} onSelect={onSelect} />
       </MapContainer>
