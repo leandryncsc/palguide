@@ -311,7 +311,7 @@ function PaldexPage() {
           </div>
 
           <div className="mt-5 space-y-4 border-t border-border pt-4">
-            <div className="grid grid-cols-[110px_1fr] items-start gap-3">
+            <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[110px_1fr] sm:gap-3">
               <span className="pt-1.5 text-sm font-semibold text-foreground">Noturno</span>
               <div className="flex flex-wrap gap-2">
                 {([
@@ -334,7 +334,7 @@ function PaldexPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-[110px_1fr] items-start gap-3">
+            <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[110px_1fr] sm:gap-3">
               <span className="pt-1.5 text-sm font-semibold text-foreground">
                 Adaptabilidade ao trabalho
               </span>
