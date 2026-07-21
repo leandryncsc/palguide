@@ -1,29 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PalNav } from "@/components/PalNav";
+import worldTreeMap from "@/assets/world-tree-map.jpg";
 
 export const Route = createFileRoute("/mapa")({
   head: () => ({
     meta: [
-      { title: "Mapa de Palpagos Island — Palworld" },
+      { title: "Mapas de Palworld — Palpagos Island & The World Tree" },
       {
         name: "description",
         content:
-          "Mapa interativo de Palpagos Island com localizações, Alpha Pals, torres, dungeons, ovos, recursos, pesca e NPCs em Palworld.",
+          "Mapas interativos de Palpagos Island e The World Tree com locais, Alpha Pals, torres, dungeons, ovos, recursos, pesca e NPCs em Palworld.",
       },
-      { property: "og:title", content: "Mapa de Palpagos Island — Palworld" },
+      { property: "og:title", content: "Mapas de Palworld — Palpagos & World Tree" },
       {
         property: "og:description",
         content:
-          "Filtros por categoria estilo palworld.th.gl: torres, alphas, dungeons, ovos, recursos, pesca e NPCs.",
+          "Filtros por categoria estilo palworld.th.gl para os dois mapas do jogo.",
       },
     ],
   }),
   component: MapaPage,
 });
 
-const MAP_URL =
-  "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Map.jpeg";
+type MapId = "palpagos" | "worldtree";
+
+const MAPS: Record<MapId, { label: string; image: string; description: string }> = {
+  palpagos: {
+    label: "Palpagos Island",
+    image: "https://cdn.jsdelivr.net/gh/tylercamp/palcalc@main/PalCalc.UI/Resources/Map.jpeg",
+    description: "Mapa principal do jogo base, com Sakurajima e Feybreak nos limites.",
+  },
+  worldtree: {
+    label: "The World Tree",
+    image: worldTreeMap,
+    description: "Mapa da DLC Tides of Terraria — bioma central com a Árvore do Mundo.",
+  },
+};
 
 type Category =
   | "location"
@@ -37,6 +50,7 @@ type Category =
 
 type Marker = {
   id: string;
+  map?: MapId; // default: palpagos
   name: string;
   category: Category;
   level?: number | string;
@@ -136,6 +150,55 @@ const MARKERS: Marker[] = [
   { id: "n5", name: "Comerciante Negro", category: "npc", coord: "(-380, -518)", x: 34, y: 66 },
   { id: "n6", name: "Mestre de Cavalaria — Sakurajima", category: "npc", coord: "(-780, 60)", x: 18, y: 45, note: "DLC." },
   { id: "n7", name: "Comerciante — Feybreak", category: "npc", coord: "(-1180, -320)", x: 8, y: 58, note: "DLC." },
+
+  // ===== The World Tree (DLC Tides of Terraria) =====
+  // Locais
+  { id: "wl1", map: "worldtree", name: "Fast Travel — Base da Árvore", category: "location", coord: "(0, 0)", x: 50, y: 50, note: "Centro do mapa." },
+  { id: "wl2", map: "worldtree", name: "Fast Travel — Pico Nevado", category: "location", coord: "(-200, 380)", x: 40, y: 30, note: "Norte gelado." },
+  { id: "wl3", map: "worldtree", name: "Fast Travel — Cratera Vulcânica", category: "location", coord: "(250, 350)", x: 62, y: 30, note: "Nordeste vulcânico." },
+  { id: "wl4", map: "worldtree", name: "Fast Travel — Deserto Dourado", category: "location", coord: "(-300, -100)", x: 30, y: 55, note: "Sudoeste árido." },
+  { id: "wl5", map: "worldtree", name: "Fast Travel — Floresta Sombria", category: "location", coord: "(150, -300)", x: 55, y: 68, note: "Sul misterioso." },
+
+  // Torres
+  { id: "wt1", map: "worldtree", name: "Torre da Árvore — Terraria & Yggdrasil", category: "tower", level: 65, coord: "(0, 50)", x: 50, y: 47, note: "Chefe final da DLC." },
+
+  // Alphas
+  { id: "wa1", map: "worldtree", name: "Alpha Yggverbird", category: "alpha", level: 55, coord: "(-150, 250)", x: 42, y: 35 },
+  { id: "wa2", map: "worldtree", name: "Alpha Pyroclast", category: "alpha", level: 58, coord: "(280, 300)", x: 63, y: 32 },
+  { id: "wa3", map: "worldtree", name: "Alpha Aurorion", category: "alpha", level: 55, coord: "(-250, 350)", x: 38, y: 30 },
+  { id: "wa4", map: "worldtree", name: "Alpha Duneling", category: "alpha", level: 52, coord: "(-320, -150)", x: 29, y: 57 },
+  { id: "wa5", map: "worldtree", name: "Alpha Umbrafox", category: "alpha", level: 56, coord: "(180, -280)", x: 56, y: 66 },
+  { id: "wa6", map: "worldtree", name: "Alpha Rootguard", category: "alpha", level: 60, coord: "(60, 100)", x: 53, y: 45, note: "Guardião da árvore." },
+
+  // Dungeons
+  { id: "wd1", map: "worldtree", name: "Dungeon das Raízes", category: "dungeon", level: "50-60", coord: "(-80, 60)", x: 46, y: 47 },
+  { id: "wd2", map: "worldtree", name: "Dungeon Vulcânica das Cinzas", category: "dungeon", level: "55-65", coord: "(260, 320)", x: 62, y: 31 },
+  { id: "wd3", map: "worldtree", name: "Dungeon do Deserto Antigo", category: "dungeon", level: "50-60", coord: "(-320, -120)", x: 29, y: 56 },
+
+  // Ovos
+  { id: "we1", map: "worldtree", name: "Ovo Enraizado (Grande)", category: "egg", coord: "(20, 60)", x: 51, y: 47, note: "Perto da árvore." },
+  { id: "we2", map: "worldtree", name: "Ovo Aquecido", category: "egg", coord: "(240, 300)", x: 61, y: 32 },
+  { id: "we3", map: "worldtree", name: "Ovo Congelado", category: "egg", coord: "(-200, 340)", x: 40, y: 31 },
+  { id: "we4", map: "worldtree", name: "Ovo Sombrio", category: "egg", coord: "(160, -260)", x: 55, y: 65 },
+  { id: "we5", map: "worldtree", name: "Ovo Rochoso", category: "egg", coord: "(-280, -80)", x: 31, y: 54 },
+  { id: "we6", map: "worldtree", name: "Ovo Dragônico", category: "egg", coord: "(80, 180)", x: 53, y: 40 },
+
+  // Recursos
+  { id: "wr1", map: "worldtree", name: "Seiva da Árvore do Mundo", category: "resource", coord: "(0, 100)", x: 50, y: 45, note: "Exclusivo DLC." },
+  { id: "wr2", map: "worldtree", name: "Obsidiana Vulcânica", category: "resource", coord: "(270, 310)", x: 62, y: 31 },
+  { id: "wr3", map: "worldtree", name: "Cristal Congelado", category: "resource", coord: "(-220, 350)", x: 39, y: 30 },
+  { id: "wr4", map: "worldtree", name: "Areia Dourada", category: "resource", coord: "(-310, -120)", x: 29, y: 56 },
+  { id: "wr5", map: "worldtree", name: "Fragmento Sombrio", category: "resource", coord: "(170, -270)", x: 55, y: 66 },
+
+  // Pesca
+  { id: "wf1", map: "worldtree", name: "Pesca — Lago da Árvore", category: "fishing", coord: "(-40, -30)", x: 48, y: 52 },
+  { id: "wf2", map: "worldtree", name: "Pesca — Rio Vulcânico", category: "fishing", coord: "(230, 250)", x: 60, y: 35 },
+  { id: "wf3", map: "worldtree", name: "Pesca — Oásis do Deserto", category: "fishing", coord: "(-290, -60)", x: 30, y: 53 },
+
+  // NPCs
+  { id: "wn1", map: "worldtree", name: "Guardiã da Árvore", category: "npc", coord: "(10, 40)", x: 50, y: 48 },
+  { id: "wn2", map: "worldtree", name: "Comerciante das Raízes", category: "npc", coord: "(-30, -20)", x: 48, y: 52 },
+  { id: "wn3", map: "worldtree", name: "Ferreiro Vulcânico", category: "npc", coord: "(260, 290)", x: 62, y: 32 },
 ];
 
 const CATEGORY_META: Record<
@@ -164,13 +227,19 @@ const CATEGORY_ORDER: Category[] = [
 ];
 
 function MapaPage() {
+  const [currentMap, setCurrentMap] = useState<MapId>("palpagos");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Set<Category>>(new Set(CATEGORY_ORDER));
   const [selected, setSelected] = useState<string | null>(null);
 
+  const mapMarkers = useMemo(
+    () => MARKERS.filter((m) => (m.map ?? "palpagos") === currentMap),
+    [currentMap],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return MARKERS.filter(
+    return mapMarkers.filter(
       (m) =>
         active.has(m.category) &&
         (q === "" ||
@@ -178,7 +247,7 @@ function MapaPage() {
           m.coord.toLowerCase().includes(q) ||
           (m.note ?? "").toLowerCase().includes(q)),
     );
-  }, [query, active]);
+  }, [query, active, mapMarkers]);
 
   function toggle(c: Category) {
     setActive((prev) => {
@@ -193,8 +262,9 @@ function MapaPage() {
     setActive(on ? new Set(CATEGORY_ORDER) : new Set());
   }
 
-  const selectedMarker = MARKERS.find((m) => m.id === selected);
-  const totalCount = MARKERS.length;
+  const selectedMarker = mapMarkers.find((m) => m.id === selected);
+  const totalCount = mapMarkers.length;
+  const mapInfo = MAPS[currentMap];
 
   return (
     <main className="min-h-screen px-4 py-6">
@@ -205,17 +275,41 @@ function MapaPage() {
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
               <h1 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Mapa de Palpagos Island
+                Mapa — {mapInfo.label}
               </h1>
               <p className="mt-1 text-xs text-muted-foreground">
-                Filtre por categoria e clique em um marcador para ver detalhes. Dados curados do mapa de Palworld.
+                {mapInfo.description}
               </p>
             </div>
             <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {filtered.length}/{totalCount} pontos
             </span>
           </div>
+
+          {/* Seletor de mapa */}
+          <div className="mt-4 inline-flex rounded-lg border border-border p-1">
+            {(Object.keys(MAPS) as MapId[]).map((id) => {
+              const on = currentMap === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setCurrentMap(id);
+                    setSelected(null);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                    on
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🗺️ {MAPS[id].label}
+                </button>
+              );
+            })}
+          </div>
         </section>
+
 
         <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
           {/* Sidebar de filtros estilo palworld.th.gl */}
@@ -243,7 +337,7 @@ function MapaPage() {
               {CATEGORY_ORDER.map((c) => {
                 const on = active.has(c);
                 const meta = CATEGORY_META[c];
-                const count = MARKERS.filter((m) => m.category === c).length;
+                const count = mapMarkers.filter((m) => m.category === c).length;
                 return (
                   <li key={c}>
                     <button
@@ -276,8 +370,8 @@ function MapaPage() {
             <div className="relative overflow-hidden rounded-2xl bg-card shadow-sm">
               <div className="relative aspect-square w-full">
                 <img
-                  src={MAP_URL}
-                  alt="Mapa de Palpagos Island"
+                  src={mapInfo.image}
+                  alt={`Mapa de ${mapInfo.label}`}
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
                 />
